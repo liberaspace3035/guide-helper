@@ -1,6 +1,7 @@
 // 管理者ダッシュボード
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import AnnouncementManagement from './AnnouncementManagement';
 import './Dashboard.css';
 
 const AdminDashboard = () => {
@@ -210,6 +211,12 @@ const AdminDashboard = () => {
           onClick={() => setActiveTab('guides')}
         >
           ガイド管理
+        </button>
+        <button
+          className={`admin-tab ${activeTab === 'announcements' ? 'active' : ''}`}
+          onClick={() => setActiveTab('announcements')}
+        >
+          お知らせ管理
         </button>
       </div>
 
@@ -557,6 +564,11 @@ const AdminDashboard = () => {
             </div>
           )}
         </section>
+      )}
+
+      {/* お知らせ管理タブ */}
+      {activeTab === 'announcements' && (
+        <AnnouncementManagement />
       )}
       </div>
     </div>

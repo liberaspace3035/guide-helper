@@ -37,6 +37,7 @@ const Layout = () => {
     const fetchUnreadCount = async () => {
       try {
         const response = await axios.get('/chat/unread-count');
+        // console.log('未読メッセージ数取得結果:', response.data.unread_count);
         setUnreadMessageCount(response.data.unread_count || 0);
       } catch (error) {
         console.error('未読メッセージ数取得エラー:', error);
@@ -63,7 +64,7 @@ const Layout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const toggleSidebar = () => {
@@ -81,7 +82,7 @@ const Layout = () => {
       )}
       <aside className={`sidebar ${!sidebarVisible ? 'sidebar-hidden' : ''}`} role="navigation" aria-label="メインナビゲーション">
         <div className="sidebar-header">
-          <Link to="/" className="sidebar-logo" aria-label="ホームへ戻る">
+          <Link to="/dashboard" className="sidebar-logo" aria-label="ダッシュボードへ戻る">
             <div className="logo-icon-wrapper">
               {/* <svg className="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -106,7 +107,7 @@ const Layout = () => {
         <nav className="nav">
             <ul className="nav-list">
               <li>
-                <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined}>
+                <Link to="/dashboard" aria-current={location.pathname === '/dashboard' ? 'page' : undefined}>
                   <svg className="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7"></rect>
                     <rect x="14" y="3" width="7" height="7"></rect>

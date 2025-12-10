@@ -66,6 +66,7 @@ const chatRoutes = require('./routes/chat');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
+const announcementRoutes = require('./routes/announcements');
 
 // ルート登録
 app.use('/api/auth', authRoutes);
@@ -76,6 +77,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // ヘルスチェックエンドポイント
 app.get('/api/health', (req, res) => {

@@ -87,10 +87,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    // console.log('登録リクエスト送信:', userData);
     try {
       const url = '/auth/register';
       const fullUrl = `${axios.defaults.baseURL}${url}`;
-      console.log('登録リクエスト送信:', { url, fullUrl, baseURL: axios.defaults.baseURL, userData });
+      // console.log('登録リクエスト送信:', { url, fullUrl, baseURL: axios.defaults.baseURL, userData });
       
       const response = await axios.post(url, userData);
       setToken(response.data.token);

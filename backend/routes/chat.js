@@ -97,6 +97,8 @@ router.get('/messages/:matching_id', authenticateToken, async (req, res) => {
 
 // 未読メッセージ数取得
 router.get('/unread-count', authenticateToken, async (req, res) => {
+  // console.log('未読メッセージ数取得リクエスト送信:', req.user);
+
   try {
     const userId = req.user.id;
 
@@ -110,6 +112,7 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
          AND cm.sender_id != ?`,
       [userId, userId, userId]
     );
+    // console.log('未読メッセージ数取得結果:', result[0].count);
 
     res.json({ unread_count: result[0].count });
   } catch (error) {

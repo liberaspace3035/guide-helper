@@ -10,8 +10,8 @@ const router = express.Router();
 // 注意: ルートの順序が重要。'/profile'より前に定義する必要がある
 router.get('/stats', authenticateToken, requireRole('admin'), async (req, res) => {
   try {
-    console.log('GET /api/users/stats - リクエスト受信');
-    console.log('User:', req.user);
+    // console.log('GET /api/users/stats - リクエスト受信');
+    // console.log('User:', req.user);
     // ユーザー数（ロール別）
     const [userStats] = await pool.execute(
       `SELECT 

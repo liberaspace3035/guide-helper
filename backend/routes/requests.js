@@ -15,10 +15,13 @@ router.post('/', authenticateToken, requireRole('user'), [
   body('destination_address').notEmpty().withMessage('住所を入力してください'),
   body('service_content').notEmpty().withMessage('サービス内容を入力してください'),
   body('request_date').isISO8601().withMessage('有効な日付を入力してください'),
+  body('guide_gender').notEmpty().withMessage('希望するガイドの性別を選択してください'),
+  body('guide_age').notEmpty().withMessage('希望するガイドの年代を選択してください'),
   body('start_time').matches(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).withMessage('有効な開始時刻を入力してください'),
   body('end_time').matches(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).withMessage('有効な終了時刻を入力してください'),
   body('meeting_place').optional()
 ], async (req, res) => {
+  console.log('リクエストボディ:', req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -30,6 +33,8 @@ router.post('/', authenticateToken, requireRole('user'), [
       destination_address,
       meeting_place,
       service_content,
+      guide_gender,
+      guide_age,
       request_date,
       request_time, // 後方互換性のため
       start_time,
@@ -38,6 +43,9 @@ router.post('/', authenticateToken, requireRole('user'), [
       notes,
       is_voice_input
     } = req.body;
+
+    console.log('リクエストボディ:', req.body);
+
 
     // 後方互換性: request_timeが指定されている場合はstart_timeとして使用
     const finalStartTime = start_time || request_time;
@@ -79,19 +87,21 @@ router.post('/', authenticateToken, requireRole('user'), [
     // 依頼作成
     const [result] = await pool.execute(
       `INSERT INTO requests 
-      (user_id, request_type, destination_address, meeting_place, masked_address, service_content, request_date, request_time, start_time, end_time, duration, notes, formatted_notes, status) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      (user_id, request_type, destination_address, meeting_place, masked_address, guide_gender, guide_age, service_content, request_date, request_time, start_time, end_time, duration, notes, formatted_notes, status) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,'pending')`,
       [
         userId, 
         request_type, 
         destination_address, 
         meeting_place || null,
         masked_address, 
+        guide_gender,
+        guide_age,
         service_content,
-        request_date, 
-        finalStartTime, // 後方互換性のためrequest_timeにも保存
+        request_date,
+        request_time,
         finalStartTime,
-        finalEndTime || null,
+        finalEndTime, 
         duration || null, 
         notes || null, 
         formatted_notes || null
@@ -222,7 +232,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       params = [requestId, userId];
     } else if (userRole === 'guide') {
       // ガイドはマスキングされた住所のみ表示
-      query = `SELECT id, user_id, request_type, masked_address, service_content, 
+      query = `SELECT id, user_id, request_type, masked_address, service_content, guide_gender, guide_age, 
                       request_date, request_time, duration, formatted_notes, status, created_at
                FROM requests WHERE id = ?`;
       params = [requestId];
@@ -249,7 +259,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.get('/guide/available', authenticateToken, requireRole('guide'), async (req, res) => {
   try {
     const [requests] = await pool.execute(
-      `SELECT id, request_type, masked_address, service_content, request_date, 
+      `SELECT id, request_type, masked_address, service_content, request_date, guide_gender, guide_age, 
               request_time, duration, status, created_at
        FROM requests 
        WHERE status = 'pending' OR status = 'guide_accepted'

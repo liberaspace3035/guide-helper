@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -17,6 +18,7 @@ import ReportForm from './pages/guide/ReportForm';
 import ReportDetail from './pages/user/ReportDetail';
 import AdminDashboard from './pages/admin/Dashboard';
 import Profile from './pages/Profile';
+import Announcements from './pages/Announcements';
 
 function App() {
   return (
@@ -24,12 +26,13 @@ function App() {
       <AuthProvider>
         <Routes>
         {/* 公開ルート */}
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* 認証が必要なルート */}
         <Route element={<Layout />}>
-          <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           
           {/* ユーザー専用ルート */}
@@ -45,6 +48,7 @@ function App() {
           {/* 共通ルート */}
           <Route path="/matchings/:id" element={<PrivateRoute><MatchingDetail /></PrivateRoute>} />
           <Route path="/chat/:matchingId" element={<PrivateRoute><Chat /></PrivateRoute>} />
+          <Route path="/announcements" element={<PrivateRoute><Announcements /></PrivateRoute>} />
           
           {/* 管理者専用ルート */}
           <Route path="/admin" element={<PrivateRoute requiredRole="admin"><AdminDashboard /></PrivateRoute>} />

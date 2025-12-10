@@ -30,7 +30,7 @@ const Login = () => {
         }, 500);
       } else {
         setTimeout(() => {
-          navigate('/');
+          navigate('/dashboard');
         }, 500);
       }
     } else {

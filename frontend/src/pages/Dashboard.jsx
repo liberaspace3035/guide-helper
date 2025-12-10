@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import AnnouncementCard from '../components/AnnouncementCard';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [usageStats, setUsageStats] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [matchings, setMatchings] = useState([]);
   const [pendingReports, setPendingReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,14 @@ const Dashboard = () => {
       // 通知取得
       const notifResponse = await axios.get('/notifications?unread_only=true');
       setNotifications(notifResponse.data.notifications.slice(0, 5));
+
+      // 未読のお知らせ取得
+      try {
+        const announcementsResponse = await axios.get('/announcements/unread');
+        setAnnouncements(announcementsResponse.data.announcements);
+      } catch (error) {
+        console.error('お知らせ取得エラー:', error);
+      }
 
       // ロール別の統計情報取得
       if (isUser) {
@@ -193,6 +203,38 @@ const Dashboard = () => {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* 運営からのお知らせセクション */}
+      {announcements.length > 0 && (
+        <section className="announcements-section" aria-label="運営からのお知らせ">
+          <div className="section-header">
+            <h2>
+              <svg className="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              運営からのお知らせ
+            </h2>
+            <Link to="/announcements" className="view-all-link">
+              すべて見る
+            </Link>
+          </div>
+          <div className="announcements-list">
+            {announcements.slice(0, 3).map(announcement => (
+              <AnnouncementCard
+                key={announcement.id}
+                announcement={announcement}
+                onRead={(id) => {
+                  setAnnouncements(prev => prev.filter(a => a.id !== id));
+                }}
+                showReadButton={true}
+              />
+            ))}
+          </div>
         </section>
       )}
 

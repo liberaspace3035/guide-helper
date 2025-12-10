@@ -5,14 +5,30 @@ import axios from 'axios';
 import './RequestForm.css';
 
 const RequestForm = () => {
+  const getDefaultDateTime = () => {
+    const now = new Date();
+    const toHM = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const start = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2時間後
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // 開始から1時間後
+    return {
+      request_date: now.toISOString().split('T')[0],
+      start_time: toHM(start),
+      end_time: toHM(end)
+    };
+  };
+
+  const defaultDateTime = getDefaultDateTime();
+
   const [formData, setFormData] = useState({
     request_type: '外出',
     destination_address: '',
     meeting_place: '',
     service_content: '',
-    request_date: '',
-    start_time: '',
-    end_time: '',
+    request_date: defaultDateTime.request_date,
+    start_time: defaultDateTime.start_time,
+    end_time: defaultDateTime.end_time,
+    guide_gender: 'none',
+    guide_age: 'none',
     notes: ''
   });
   const [isVoiceInput, setIsVoiceInput] = useState(false);
@@ -137,6 +153,14 @@ const RequestForm = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log('formData:', formData);
+
+    // 希望するガイドの必須チェック（初期値「選択しない」を不可）
+    if (formData.guide_gender === 'none' || formData.guide_age === 'none') {
+      setError('希望するガイドの性別と年代を選択してください');
+      setLoading(false);
+      return;
+    }
 
     // バリデーション: 終了時刻が開始時刻より後であることを確認
     if (formData.start_time && formData.end_time && formData.start_time >= formData.end_time) {
@@ -230,20 +254,36 @@ const RequestForm = () => {
             </div>
           </>
         ) : (
-          <div className="form-group">
-            <label htmlFor="destination_address">場所 <span className="required">*</span></label>
-            <input
-              type="text"
-              id="destination_address"
-              name="destination_address"
-              value={formData.destination_address}
-              onChange={handleChange}
-              required
-              placeholder="例: 東京都渋谷区青山１－１－１"
-              aria-required="true"
-            />
-            <small>詳細な住所を入力してください（ガイドには大まかな地域のみ表示されます）</small>
-          </div>
+          <>
+            <div className="form-group">
+              <label htmlFor="destination_address">場所 <span className="required">*</span></label>
+              <input
+                type="text"
+                id="destination_address"
+                name="destination_address"
+                value={formData.destination_address}
+                onChange={handleChange}
+                required
+                placeholder="例: 東京都渋谷区青山１－１－１"
+                aria-required="true"
+              />
+              <small>詳細な住所を入力してください（ガイドには大まかな地域のみ表示されます）</small>
+            </div>
+            <div className="form-group">
+              <label htmlFor="meeting_place">集合場所 <span className="required">*</span></label>
+              <input
+                type="text"
+                id="meeting_place"
+                name="meeting_place"
+                value={formData.meeting_place}
+                onChange={handleChange}
+                required
+                placeholder="例: 玄関前"
+                aria-required="true"
+              />
+              <small>ガイドとの集合場所を入力してください</small>
+            </div>
+          </>
         )}
 
         <div className="form-group full-width">
@@ -255,9 +295,48 @@ const RequestForm = () => {
             onChange={handleChange}
             required
             rows={4}
-            placeholder="必要なサービス内容を詳しく記入してください"
+            placeholder="『買い物』『代筆』など、具体的なサービス内容を記載してください"
             aria-required="true"
           />
+        </div>
+
+        <div className="form-group full-width">
+          <h3 className="section-subtitle">希望するガイドについて <span className="required">*</span></h3>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="guide_gender">希望するガイドの性別 <span className="required">*</span></label>
+              <select
+                id="guide_gender"
+                name="guide_gender"
+                value={formData.guide_gender}
+                onChange={handleChange}
+                required
+                aria-required="true"
+              >
+                <option value="none">選択しない（どの性別でも構わない）</option>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="guide_age">希望するガイドの年代 <span className="required">*</span></label>
+              <select
+                id="guide_age"
+                name="guide_age"
+                value={formData.guide_age}
+                onChange={handleChange}
+                required
+                aria-required="true"
+              >
+                <option value="none">選択しない（どの年代でも構わない）</option>
+                <option value="20s">20代</option>
+                <option value="30s">30代</option>
+                <option value="40s">40代</option>
+                <option value="50s">50代</option>
+                <option value="60s">60代</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="form-row">

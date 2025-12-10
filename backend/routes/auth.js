@@ -12,7 +12,8 @@ const router = express.Router();
 router.post('/register', [
   body('email').isEmail().withMessage('有効なメールアドレスを入力してください'),
   body('password').isLength({ min: 6 }).withMessage('パスワードは6文字以上である必要があります'),
-  body('name').notEmpty().withMessage('名前を入力してください'),
+  body('last_name').notEmpty().withMessage('姓を入力してください'),
+  body('first_name').notEmpty().withMessage('名を入力してください'),
   body('role').isIn(['user', 'guide']).withMessage('有効なロールを選択してください')
 ], async (req, res) => {
   try {
@@ -23,7 +24,23 @@ router.post('/register', [
       });
     }
 
-    const { email, password, name, role, phone } = req.body;
+    const { 
+      email, 
+      password, 
+      name,
+      last_name, 
+      first_name, 
+      last_name_kana, 
+      first_name_kana, 
+      age, 
+      gender, 
+      address, 
+      role, 
+      phone 
+    } = req.body;
+    
+    // 氏名を結合（nameが提供されていない場合）
+    const fullName = name || `${last_name} ${first_name}`.trim();
 
     // メールアドレスの重複チェック
     const [existingUsers] = await pool.execute(
@@ -40,8 +57,24 @@ router.post('/register', [
 
     // ユーザー作成
     const [result] = await pool.execute(
-      'INSERT INTO users (email, password_hash, name, phone, role) VALUES (?, ?, ?, ?, ?)',
-      [email, passwordHash, name, phone || null, role]
+      `INSERT INTO users (
+        email, password_hash, name, last_name, first_name, 
+        last_name_kana, first_name_kana, age, gender, address, phone, role
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        email, 
+        passwordHash, 
+        fullName,
+        last_name || null, 
+        first_name || null,
+        last_name_kana || null,
+        first_name_kana || null,
+        age ? parseInt(age) : null,
+        gender || null,
+        address || null,
+        phone || null, 
+        role
+      ]
     );
 
     const userId = result.insertId;
@@ -78,7 +111,7 @@ router.post('/register', [
       user: {
         id: userId,
         email,
-        name,
+
         role
       }
     });
@@ -136,6 +169,7 @@ router.post('/login', [
   body('email').isEmail().withMessage('有効なメールアドレスを入力してください'),
   body('password').notEmpty().withMessage('パスワードを入力してください')
 ], async (req, res) => {
+  // console.log('ログインリクエスト送信:', req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

@@ -34,6 +34,15 @@
   grid-column: 1 / -1;
 }
 
+.section-subtitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: var(--spacing-xs);
+}
+
 .form-group label {
   margin-bottom: var(--spacing-xs);
   font-size: 14px;
