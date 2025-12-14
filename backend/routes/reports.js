@@ -3,7 +3,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../database');
 const { authenticateToken, requireRole } = require('../middleware/auth');
-const { sendNotification } = require('../utils/notifications');
+const { sendNotification } = require('../utils/notifications');                    
 
 const router = express.Router();
 
@@ -124,6 +124,8 @@ router.post('/', authenticateToken, requireRole('guide'), [
 
 // 報告書提出（ガイド）
 router.post('/:id/submit', authenticateToken, requireRole('guide'), async (req, res) => {
+  console.log("=================>", req.params);
+
   try {
     const reportId = req.params.id;
     const guideId = req.user.id;
@@ -156,6 +158,7 @@ router.post('/:id/submit', authenticateToken, requireRole('guide'), async (req, 
        VALUES (?, 'report', '報告書が提出されました', 'ガイドから報告書が提出されました。承認または修正依頼を行ってください。', ?)`,
       [report.user_id, reportId]
     );
+
 
     res.json({ message: '報告書が提出されました' });
   } catch (error) {

@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     user_id INT NOT NULL,
     contact_method VARCHAR(50),
     notes TEXT,
+    recipient_number VARCHAR(100),
+    admin_comment TEXT,
+    introduction TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_profile (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -33,6 +36,7 @@ CREATE TABLE IF NOT EXISTS guide_profiles (
     available_areas TEXT, -- JSON形式で保存（例: ["東京都", "大阪府"]）
     available_days TEXT, -- JSON形式で保存（例: ["平日", "土日"]）
     available_times TEXT, -- JSON形式で保存（例: ["午前", "午後", "夜間"]）
+    employee_number VARCHAR(100),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_guide_profile (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

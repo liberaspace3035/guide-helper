@@ -14,8 +14,9 @@ const Register = () => {
     first_name: '',
     last_name_kana: '',
     first_name_kana: '',
-    age: '',
+    birth_date: '',
     gender: '',
+    postal_code: '',
     address: '',
     phone: '',
     role: 'user'
@@ -28,23 +29,10 @@ const Register = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    // カナ入力フィールドの場合、全角カタカナに変換
-    if (name === 'last_name_kana' || name === 'first_name_kana') {
-      // ひらがなをカタカナに変換
-      const katakanaValue = value.replace(/[ぁ-ゖ]/g, (char) => {
-        return String.fromCharCode(char.charCodeAt(0) + 0x60);
-      });
-      setFormData({
-        ...formData,
-        [name]: katakanaValue
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    }
+    setFormData({
+      ...formData,
+      [name]: value
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -62,16 +50,32 @@ const Register = () => {
     }
 
     setLoading(true);
+    let infoMessageShown = false;
 
-    const { confirmPassword, ...registerData } = formData;
+    const { confirmPassword, birth_date, ...registerData } = formData;
     
     // 氏名を結合してnameフィールドを作成（後方互換性のため）
     registerData.name = `${registerData.last_name} ${registerData.first_name}`.trim();
+    
+    // 生年月日から年齢を算出して送信（バックエンド互換用）
+    if (birth_date) {
+      const today = new Date();
+      const dob = new Date(birth_date);
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      registerData.age = age;
+      registerData.birth_date = birth_date;
+    }
     
     const result = await register(registerData);
 
     if (result.success) {
       showSuccess('ユーザー登録が完了しました');
+      infoMessageShown = true;
+      alert('今後の手続きは運営側からご連絡しますので、しばらくお待ちください。');
       setTimeout(() => {
         navigate('/login');
       }, 1500);
@@ -153,7 +157,7 @@ const Register = () => {
                       name="last_name_kana"
                       value={formData.last_name_kana}
                       onChange={handleChange}
-                      placeholder="セイ"
+                      placeholder="セイ（全角カタカナで入力）"
                       pattern="[ァ-ヶー\s]*"
                       title="全角カタカナで入力してください"
                       style={{ imeMode: 'active' }}
@@ -167,7 +171,7 @@ const Register = () => {
                       name="first_name_kana"
                       value={formData.first_name_kana}
                       onChange={handleChange}
-                      placeholder="メイ"
+                      placeholder="メイ（全角カタカナで入力）"
                       pattern="[ァ-ヶー\s]*"
                       title="全角カタカナで入力してください"
                       style={{ imeMode: 'active' }}
@@ -178,16 +182,14 @@ const Register = () => {
               </div>
               <div className="form-row">
                 <div className="form-group form-group-half">
-                  <label htmlFor="age">年齢</label>
+                  <label htmlFor="birth_date">生年月日</label>
                   <input
-                    type="number"
-                    id="age"
-                    name="age"
-                    value={formData.age}
+                    type="date"
+                    id="birth_date"
+                    name="birth_date"
+                    value={formData.birth_date}
                     onChange={handleChange}
-                    min="1"
-                    max="150"
-                    placeholder="例: 30"
+                    aria-label="生年月日"
                   />
                 </div>
                 <div className="form-group form-group-half">
@@ -206,16 +208,30 @@ const Register = () => {
                   </select>
                 </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="address">住所</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  rows="2"
-                  placeholder="都道府県、市区町村、番地などを入力"
-                />
+              <div className="form-row">
+                <div className="form-group form-group-half">
+                  <label htmlFor="postal_code">郵便番号</label>
+                  <input
+                    type="text"
+                    id="postal_code"
+                    name="postal_code"
+                    value={formData.postal_code}
+                    onChange={handleChange}
+                    placeholder="例: 123-4567"
+                    inputMode="numeric"
+                  />
+                </div>
+                <div className="form-group form-group-half">
+                  <label htmlFor="address">住所</label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    rows="2"
+                    placeholder="都道府県、市区町村、番地などを入力"
+                  />
+                </div>
               </div>
             </div>
 

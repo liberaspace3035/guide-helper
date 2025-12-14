@@ -73,6 +73,16 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.table-inline-field {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.table-inline-field input {
+  min-width: 160px;
+}
+
 .admin-table th {
   background-color: var(--background-color);
   font-weight: 600;

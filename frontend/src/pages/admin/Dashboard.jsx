@@ -14,6 +14,9 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [autoMatching, setAutoMatching] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userMeta, setUserMeta] = useState({});
+  const [guideMeta, setGuideMeta] = useState({});
+  const [userAdminComment, setUserAdminComment] = useState({});
 
   const fetchDashboardData = async () => {
     try {
@@ -49,7 +52,16 @@ const AdminDashboard = () => {
     try {
       const response = await axios.get('/admin/users');
       setUsers(response.data.users);
-      console.log("==========>", response.data.users);
+      const metaMap = {};
+      response.data.users.forEach(u => {
+        metaMap[u.id] = u.recipient_number || '';
+      });
+      setUserMeta(metaMap);
+      const commentMap = {};
+      response.data.users.forEach(u => {
+        commentMap[u.id] = u.admin_comment || '';
+      });
+      setUserAdminComment(commentMap);
     } catch (error) {
       console.error('ユーザー一覧取得エラー:', error);
       alert('ユーザー一覧の取得に失敗しました');
@@ -60,6 +72,11 @@ const AdminDashboard = () => {
     try {
       const response = await axios.get('/admin/guides');
       setGuides(response.data.guides);
+      const metaMap = {};
+      response.data.guides.forEach(g => {
+        metaMap[g.id] = g.employee_number || '';
+      });
+      setGuideMeta(metaMap);
     } catch (error) {
       console.error('ガイド一覧取得エラー:', error);
       alert('ガイド一覧の取得に失敗しました');
@@ -91,8 +108,13 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleMatchingApprove = async (requestId, guideId) => {
+  const handleMatchingApprove = async (requestId, guideId, userSelected) => {
+  
     try {
+      if (userSelected=="false") {
+        alert('ユーザーが選択されていません');
+        return;
+      }
       await axios.post('/admin/matchings/approve', {
         request_id: requestId,
         guide_id: guideId
@@ -175,6 +197,33 @@ const AdminDashboard = () => {
       fetchGuides();
     } catch (error) {
       alert('ガイド拒否に失敗しました');
+      console.error(error);
+    }
+  };
+
+  const handleUserMetaSave = async (userId) => {
+    try {
+      await axios.put(`/admin/users/${userId}/profile-extra`, {
+        recipient_number: userMeta[userId] || null,
+        admin_comment: userAdminComment[userId] || null
+      });
+      alert('受給者証番号/コメントを更新しました');
+      fetchUsers();
+    } catch (error) {
+      alert('受給者証番号/コメントの更新に失敗しました');
+      console.error(error);
+    }
+  };
+
+  const handleGuideMetaSave = async (guideId) => {
+    try {
+      await axios.put(`/admin/guides/${guideId}/profile-extra`, {
+        employee_number: guideMeta[guideId] || null
+      });
+      alert('従業員番号を更新しました');
+      fetchGuides();
+    } catch (error) {
+      alert('従業員番号の更新に失敗しました');
       console.error(error);
     }
   };
@@ -370,7 +419,7 @@ const AdminDashboard = () => {
                     <td>{acc.request_date} {acc.request_time}</td>
                     <td>
                       <button
-                        onClick={() => handleMatchingApprove(acc.request_id, acc.guide_id)}
+                        onClick={() => handleMatchingApprove(acc.request_id, acc.guide_id, acc.user_selected)}
                         className="btn-primary btn-sm"
                       >
                         承認
@@ -463,6 +512,8 @@ const AdminDashboard = () => {
                     <th>名前</th>
                     <th>メールアドレス</th>
                     <th>電話番号</th>
+                    <th>受給者証番号</th>
+                    <th>運営コメント</th>
                     <th>登録日</th>
                     <th>承認状態</th>
                     <th>操作</th>
@@ -475,6 +526,37 @@ const AdminDashboard = () => {
                       <td>{user.name}</td>
                       <td>{user.email}</td>
                       <td>{user.phone || '-'}</td>
+                      <td>
+                        <div className="table-inline-field">
+                          <input
+                            type="text"
+                            onChange={(e) => setUserMeta(prev => ({ ...prev, [user.id]: e.target.value }))}
+                            placeholder="受給者証番号"
+                          />
+                          <button
+                            className="btn-secondary btn-sm"
+                            onClick={() => handleUserMetaSave(user.id)}
+                          >
+                            保存
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="table-inline-field">
+                          <input
+                            type="text"
+                            value={userAdminComment[user.id] ?? ''}
+                            onChange={(e) => setUserAdminComment(prev => ({ ...prev, [user.id]: e.target.value }))}
+                            placeholder="運営コメント"
+                          />
+                          <button
+                            className="btn-secondary btn-sm"
+                            onClick={() => handleUserMetaSave(user.id)}
+                          >
+                            保存
+                          </button>
+                        </div>
+                      </td>
                       <td>{new Date(user.created_at).toLocaleDateString('ja-JP')}</td>
                       <td>
                         <span className={`status-badge ${user.is_allowed ? 'status-approved' : 'status-pending'}`}>
@@ -522,6 +604,7 @@ const AdminDashboard = () => {
                     <th>名前</th>
                     <th>メールアドレス</th>
                     <th>電話番号</th>
+                    <th>従業員番号</th>
                     <th>登録日</th>
                     <th>承認状態</th>
                     <th>操作</th>
@@ -534,6 +617,22 @@ const AdminDashboard = () => {
                       <td>{guide.name}</td>
                       <td>{guide.email}</td>
                       <td>{guide.phone || '-'}</td>
+                      <td>
+                        <div className="table-inline-field">
+                          <input
+                            type="text"
+                            value={guideMeta[guide.id] ?? ''}
+                            onChange={(e) => setGuideMeta(prev => ({ ...prev, [guide.id]: e.target.value }))}
+                            placeholder="従業員番号"
+                          />
+                          <button
+                            className="btn-secondary btn-sm"
+                            onClick={() => handleGuideMetaSave(guide.id)}
+                          >
+                            保存
+                          </button>
+                        </div>
+                      </td>
                       <td>{new Date(guide.created_at).toLocaleDateString('ja-JP')}</td>
                       <td>
                         <span className={`status-badge ${guide.is_allowed ? 'status-approved' : 'status-pending'}`}>

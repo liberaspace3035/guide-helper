@@ -157,13 +157,13 @@ async function createMatching(requestId, userId, guideId) {
     // ユーザーとガイドに通知
     await pool.execute(
       `INSERT INTO notifications (user_id, type, title, message, related_id)
-       VALUES (?, 'matching', 'マッチングが成立しました', 'マッチングが成立しました。チャットで詳細を確認してください。', ?)`,
+       VALUES (?, 'matching', '依頼が確定しました', '依頼が確定しました。チャットで詳細を確認してください。', ?)`,
       [userId, matchingId]
     );
 
     await pool.execute(
       `INSERT INTO notifications (user_id, type, title, message, related_id)
-       VALUES (?, 'matching', 'マッチングが成立しました', 'マッチングが成立しました。チャットで詳細を確認してください。', ?)`,
+       VALUES (?, 'matching', '依頼が確定しました', '依頼が確定しました。チャットで詳細を確認してください。', ?)`,
       [guideId, matchingId]
     );
 
@@ -200,7 +200,6 @@ router.get('/my-matchings', authenticateToken, async (req, res) => {
     }
 
     const [matchings] = await pool.execute(query, [userId]);
-
     res.json({ matchings });
   } catch (error) {
     console.error('マッチング一覧取得エラー:', error);

@@ -139,6 +139,9 @@ const Home = () => {
                 ログイン
               </Link>
             </div>
+            <p className="cta-note">
+              新規会員登録後には審査と契約が必要です。審査と契約には1週間程度が必要です。
+            </p>
           </div>
         </section>
       )}

@@ -127,6 +127,63 @@
   justify-content: center;
 }
 
+.applicants-panel {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.loading-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.applicants-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.applicant-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  background: var(--surface-hover);
+}
+
+.applicant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.applicant-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.applicant-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.applicant-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 .empty-state {
   text-align: center;
   padding: var(--spacing-2xl);

@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [matchings, setMatchings] = useState([]);
   const [pendingReports, setPendingReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [guideMatchings, setGuideMatchings] = useState([]);
   
   // 月別表示用の状態
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -71,6 +72,8 @@ const Dashboard = () => {
           pendingReports: pendingReportsResponse.data.reports?.length || 0
         });
         setUsageStats(usageStatsResponse.data);
+
+        console.log("pendingReportsResponse.data.reports", pendingReportsResponse.data.reports);
       } else if (isGuide) {
         const [requestsResponse, matchingsResponse, reportsResponse, guideStatsResponse] = await Promise.all([
           axios.get('/requests/guide/available'),
@@ -78,12 +81,14 @@ const Dashboard = () => {
           axios.get('/reports/my-reports'),
           axios.get('/reports/guide-stats')
         ]);
+
         
         const activeMatchings = matchingsResponse.data.matchings.filter(m => m.status === 'matched' || m.status === 'in_progress');
         const completedMatchings = matchingsResponse.data.matchings.filter(m => m.status === 'completed');
         const pendingReports = reportsResponse.data.reports.filter(r => r.status === 'draft' || r.status === 'revision_requested');
-        
+                
         setMatchings(activeMatchings);
+        setGuideMatchings(activeMatchings);
         setStats({
           availableRequests: requestsResponse.data.requests.length,
           activeMatchings: activeMatchings.length,
@@ -148,7 +153,7 @@ const Dashboard = () => {
   // ステータスバッジ
   const getStatusBadge = (status) => {
     const statusMap = {
-      'matched': { label: 'マッチング中', class: 'badge-info' },
+      'matched': { label: '今後確定している予定', class: 'badge-info' },
       'in_progress': { label: '進行中', class: 'badge-warning' },
       'completed': { label: '完了', class: 'badge-success' },
       'cancelled': { label: 'キャンセル', class: 'badge-error' }
@@ -292,7 +297,7 @@ const Dashboard = () => {
             </section>
           )}
 
-          {/* 統計カード */}
+          {/* 利用状況カード */}
           <div className="dashboard-cards">
             {stats && (
               <div className="card stats-card">
@@ -306,7 +311,7 @@ const Dashboard = () => {
                     <path d="M15 21V10"></path>
                     <path d="M19 21V4"></path>
                   </svg>
-                  <h3>統計情報</h3>
+                  <h3>利用状況</h3>
                 </div>
                 <div className="stats-grid">
                   <div className="stat-item">
@@ -407,6 +412,31 @@ const Dashboard = () => {
                           </div>
                         </div>
                       </div>
+                      {usageStats.monthly && usageStats.monthly.length > 0 && (
+                        <div className="usage-table-wrapper" role="region" aria-label="利用時間テーブル">
+                          <table className="usage-table">
+                            <caption>月別利用時間</caption>
+                            <thead>
+                              <tr>
+                                <th scope="col">月</th>
+                                <th scope="col">合計時間</th>
+                                <th scope="col">外出</th>
+                                <th scope="col">自宅</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {usageStats.monthly.map((m) => (
+                                <tr key={m.month}>
+                                  <td>{m.month}</td>
+                                  <td>{m.total_hours ?? Math.round((m.total_minutes || 0) / 60 * 10) / 10} 時間</td>
+                                  <td>{m.by_type?.['外出'] ?? (usageStats.current_month?.by_type?.['外出'] && m.month === selectedMonth ? usageStats.current_month.by_type['外出'] : '-')}</td>
+                                  <td>{m.by_type?.['自宅'] ?? (usageStats.current_month?.by_type?.['自宅'] && m.month === selectedMonth ? usageStats.current_month.by_type['自宅'] : '-')}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -414,66 +444,53 @@ const Dashboard = () => {
             )}
           </div>
           
-          {/* マッチング一覧 */}
+          {/* 予定（マッチング済み）一覧 */}
           {matchings.length > 0 && (
-            <section className="matchings-section" aria-label="マッチング一覧">
+            <section className="matchings-section" aria-label="今後確定している予定">
               <div className="section-header">
-                <h2>
-                  <svg className="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  進行中のマッチング
-                </h2>
+                <h2>今後確定している予定</h2>
               </div>
-              <div className="matchings-list">
-                {matchings.map(matching => (
-                  <div key={matching.id} className="matching-card">
-                    <div className="matching-header">
-                      {getStatusBadge(matching.status)}
-                      <span className="matching-type">{matching.request_type}</span>
-                    </div>
-                    <div className="matching-info">
-                      <h3>{matching.masked_address}</h3>
-                      <div className="matching-details">
-                        <p>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                          </svg>
-                          ガイド: {matching.guide_name}
-                        </p>
-                        <p>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                          </svg>
-                          {formatDate(matching.request_date)} {matching.request_time}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="matching-actions">
-                      <Link to={`/chat/${matching.id}`} className="btn-primary btn-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        <span>チャット</span>
-                      </Link>
-                      <Link to={`/matchings/${matching.id}`} className="btn-secondary btn-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <line x1="12" y1="16" x2="12" y2="12"></line>
-                          <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        </svg>
-                        <span>詳細</span>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
+              <div className="matchings-table-wrapper" role="region" aria-label="今後確定している予定の一覧">
+                <table className="matchings-table">
+                  <caption className="sr-only">今後確定している予定</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">状態</th>
+                      <th scope="col">依頼種別</th>
+                      <th scope="col">ガイド</th>
+                      <th scope="col">日時</th>
+                      <th scope="col">場所</th>
+                      <th scope="col">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchings.map(matching => (
+                      <tr key={matching.id}>
+                        <td>{getStatusBadge(matching.status)}</td>
+                        <td>{matching.request_type}</td>
+                        <td>{matching.guide_name}</td>
+                        <td>{formatDate(matching.request_date)} {matching.request_time}</td>
+                        <td>{matching.masked_address}</td>
+                        <td className="table-actions">
+                          <Link to={`/chat/${matching.id}`} className="btn-primary btn-icon" aria-label={`チャット: ${matching.guide_name}`}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>チャット</span>
+                          </Link>
+                          <Link to={`/matchings/${matching.id}`} className="btn-secondary btn-icon" aria-label={`詳細: ${matching.guide_name}`}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <span>詳細</span>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </section>
           )}
@@ -497,11 +514,45 @@ const Dashboard = () => {
         </>
       )}
 
+      {/* ガイド向けダッシュボードクイックアクション */}
+      {isGuide && (
+        <section className="quick-actions">
+          <Link to="/guide/requests" className="quick-action-btn secondary">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            <span>依頼一覧</span>
+            {stats?.availableRequests > 0 && (
+                <span className="action-badge">{stats.availableRequests}</span>
+              )}
+          </Link>
+          {guideMatchings.length > 0 && (
+            <Link
+              to={`/guide/reports/new/${guideMatchings[0].id}`}
+              className="quick-action-btn primary"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="11" x2="12" y2="17"></line>
+                <line x1="9" y1="14" x2="15" y2="14"></line>
+              </svg>
+              <span>報告書を作成</span>
+            </Link>
+          )}
+        </section>
+      )}
+
       {/* ガイド向けダッシュボード */}
       {isGuide && (
         <>
           {/* クイックアクション */}
-          <section className="quick-actions">
+          {/* <section className="quick-actions">
             <Link to="/guide/requests" className="quick-action-btn primary">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -512,11 +563,8 @@ const Dashboard = () => {
                 <line x1="3" y1="18" x2="3.01" y2="18"></line>
               </svg>
               <span>依頼を探す</span>
-              {stats?.availableRequests > 0 && (
-                <span className="action-badge">{stats.availableRequests}</span>
-              )}
-            </Link>
-          </section>
+            
+          </section> */}
 
           {/* 統計カード */}
           <div className="dashboard-cards">
@@ -532,7 +580,7 @@ const Dashboard = () => {
                     <path d="M15 21V10"></path>
                     <path d="M19 21V4"></path>
                   </svg>
-                  <h3>統計情報</h3>
+                  <h3>利用状況</h3>
                 </div>
                 <div className="stats-grid">
                   <div className="stat-item highlight">

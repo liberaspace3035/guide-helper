@@ -58,7 +58,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 
     // ユーザー基本情報取得
     const [users] = await pool.execute(
-      'SELECT id, email, name, phone, role, created_at FROM users WHERE id = ?',
+      'SELECT id, email, name, phone, address, age, role, created_at FROM users WHERE id = ?',
       [userId]
     );
 
@@ -71,13 +71,13 @@ router.get('/profile', authenticateToken, async (req, res) => {
     // プロフィール情報も取得
     if (userRole === 'user') {
       const [profiles] = await pool.execute(
-        'SELECT contact_method, notes FROM user_profiles WHERE user_id = ?',
+        'SELECT contact_method, notes, recipient_number, admin_comment, introduction FROM user_profiles WHERE user_id = ?',
         [user.id]
       );
       user.profile = profiles[0] || {};
     } else if (userRole === 'guide') {
       const [profiles] = await pool.execute(
-        'SELECT introduction, available_areas, available_days, available_times FROM guide_profiles WHERE user_id = ?',
+        'SELECT introduction, available_areas, available_days, available_times, employee_number FROM guide_profiles WHERE user_id = ?',
         [user.id]
       );
       user.profile = profiles[0] || {};
@@ -125,29 +125,35 @@ router.put('/profile', authenticateToken, [
       });
     }
 
-    const { name, phone, contact_method, notes } = req.body;
+    const { name, phone, address, contact_method, notes, recipient_number, introduction } = req.body;
     const userId = req.user.id;
 
-    // ユーザー情報更新
-    if (name || phone !== undefined) {
-      const updateFields = [];
-      const updateValues = [];
+    // ユーザー情報更新（氏名・電話番号は管理者のみ）
+    if (req.user.role === 'admin') {
+      if (name || phone !== undefined || address !== undefined) {
+        const updateFields = [];
+        const updateValues = [];
 
-      if (name) {
-        updateFields.push('name = ?');
-        updateValues.push(name);
-      }
-      if (phone !== undefined) {
-        updateFields.push('phone = ?');
-        updateValues.push(phone);
-      }
+        if (name) {
+          updateFields.push('name = ?');
+          updateValues.push(name);
+        }
+        if (phone !== undefined) {
+          updateFields.push('phone = ?');
+          updateValues.push(phone);
+        }
+        if (address !== undefined) {
+          updateFields.push('address = ?');
+          updateValues.push(address);
+        }
 
-      if (updateFields.length > 0) {
-        updateValues.push(userId);
-        await pool.execute(
-          `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
-          updateValues
-        );
+        if (updateFields.length > 0) {
+          updateValues.push(userId);
+          await pool.execute(
+            `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+            updateValues
+          );
+        }
       }
     }
 
@@ -169,6 +175,14 @@ router.put('/profile', authenticateToken, [
         if (notes !== undefined) {
           profileFields.push('notes = ?');
           profileValues.push(notes);
+        }
+        if (req.user.role === 'admin' && recipient_number !== undefined) {
+          profileFields.push('recipient_number = ?');
+          profileValues.push(recipient_number);
+        }
+        if (introduction !== undefined) {
+          profileFields.push('introduction = ?');
+          profileValues.push(introduction);
         }
 
         if (profileFields.length > 0) {

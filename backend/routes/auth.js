@@ -111,7 +111,7 @@ router.post('/register', [
       user: {
         id: userId,
         email,
-
+        name: fullName,
         role
       }
     });
@@ -227,7 +227,7 @@ router.post('/login', [
 router.get('/user', authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, email, name, phone, role, created_at FROM users WHERE id = ?',
+      'SELECT id, email, name, phone, address, age, role, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -240,13 +240,14 @@ router.get('/user', authenticateToken, async (req, res) => {
     // プロフィール情報も取得
     if (user.role === 'user') {
       const [profiles] = await pool.execute(
-        'SELECT contact_method, notes FROM user_profiles WHERE user_id = ?',
+        'SELECT contact_method, notes, recipient_number, admin_comment, introduction FROM user_profiles WHERE user_id = ?',
         [user.id]
       );
       user.profile = profiles[0] || {};
+      
     } else if (user.role === 'guide') {
       const [profiles] = await pool.execute(
-        'SELECT introduction, available_areas, available_days, available_times FROM guide_profiles WHERE user_id = ?',
+        'SELECT introduction, available_areas, available_days, available_times, employee_number FROM guide_profiles WHERE user_id = ?',
         [user.id]
       );
       user.profile = profiles[0] || {};

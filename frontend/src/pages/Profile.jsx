@@ -5,17 +5,25 @@ import axios from 'axios';
 import './Profile.css';
 
 const Profile = () => {
-  const { user, updateUser, isGuide } = useAuth();
+  const { user, updateUser, isGuide, isAdmin } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    address: '',
+    age: '',
+    birth_date: '',
     contact_method: '',
     notes: '',
     introduction: '',
     available_areas: [],
     available_days: [],
-    available_times: []
+    available_times: [],
+    employee_number: '',
+    recipient_number: '',
+    admin_comment: ''
   });
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -24,24 +32,51 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    fetchUsageStats();
+  }, [user]);
+
   const fetchProfile = async () => {
     try {
       const response = await axios.get('/auth/user');
       const userData = response.data.user;
+
+      // console.log(">>>>>", userData);
       setFormData({
         name: userData.name || '',
         phone: userData.phone || '',
+        address: userData.address || '',
+        age: userData.age || '',
         contact_method: userData.profile?.contact_method || '',
         notes: userData.profile?.notes || '',
         introduction: userData.profile?.introduction || '',
         available_areas: userData.profile?.available_areas || [],
         available_days: userData.profile?.available_days || [],
-        available_times: userData.profile?.available_times || []
+        available_times: userData.profile?.available_times || [],
+        employee_number: userData.profile?.employee_number || '',
+        recipient_number: userData.profile?.recipient_number || '',
+        admin_comment: userData.profile?.admin_comment || ''
       });
+
     } catch (error) {
       console.error('プロフィール取得エラー:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsageStats = async () => {
+    try {
+      setStatsLoading(true);
+      const endpoint = isGuide ? '/reports/guide-stats' : '/reports/usage-stats';
+      const response = await axios.get(endpoint);
+      setStats(response.data);
+    } catch (error) {
+      console.error('実績時間取得エラー:', error);
+      setStats(null);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -75,20 +110,27 @@ const Profile = () => {
           available_times: formData.available_times
         });
       }
-      await axios.put('/users/profile', {
-        name: formData.name,
-        phone: formData.phone,
+      // 管理者のみ氏名・電話・住所を送る。それ以外は連絡手段・備考・紹介のみ
+      const profilePayload = {
         contact_method: formData.contact_method,
-        notes: formData.notes
-      });
+        notes: formData.notes,
+        recipient_number: formData.recipient_number,
+        introduction: formData.introduction
+      };
+      if (isAdmin) {
+        profilePayload.name = formData.name;
+        profilePayload.phone = formData.phone;
+        profilePayload.address = formData.address;
+      }
+      await axios.put('/users/profile', profilePayload);
       updateUser({ name: formData.name });
       setMessage('プロフィールが更新されました');
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 
-                          (error.response?.data?.errors && Array.isArray(error.response.data.errors) 
-                            ? error.response.data.errors.map(e => e.msg).join(', ')
-                            : '') ||
-                          'プロフィールの更新に失敗しました';
+      const errorMessage = error.response?.data?.error ||
+        (error.response?.data?.errors && Array.isArray(error.response.data.errors)
+          ? error.response.data.errors.map(e => e.msg).join(', ')
+          : '') ||
+        'プロフィールの更新に失敗しました';
       setMessage(errorMessage);
       console.error('プロフィール更新エラー:', error.response?.data || error.message);
     } finally {
@@ -125,6 +167,8 @@ const Profile = () => {
             onChange={handleChange}
             required
             aria-required="true"
+            readOnly={!isAdmin}
+            disabled={!isAdmin}
           />
         </div>
 
@@ -136,6 +180,33 @@ const Profile = () => {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
+            readOnly={!isAdmin}
+            disabled={!isAdmin}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="address">住所</label>
+          <textarea
+            id="address"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            rows={2}
+            readOnly={!isAdmin}
+            disabled={!isAdmin}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="age">年齢（表示のみ）</label>
+          <input
+            type="text"
+            id="age"
+            name="age"
+            value={formData.age || ''}
+            readOnly
+            disabled
           />
         </div>
 
@@ -162,6 +233,51 @@ const Profile = () => {
                 rows={4}
               />
             </div>
+            {!isAdmin && <div className="form-group">
+              <label>受給者証番号（閲覧のみ）</label>
+              <input
+                type="text"
+                value={formData.recipient_number || ''}
+                disabled
+                aria-readonly="true"
+              />
+            </div>
+            }
+
+            <div className="form-group">
+              <label htmlFor="introduction">自己紹介</label>
+              <textarea
+                id="introduction"
+                name="introduction"
+                value={formData.introduction}
+                onChange={handleChange}
+                rows={4}
+                placeholder="自己紹介を記入してください"
+              />
+            </div>
+
+            {!isAdmin && <div className="form-group">
+              <label>実績時間（報告書確定ベース・月別積算）</label>
+              {statsLoading ? (
+                <div className="loading-inline">
+                  <div className="loading-spinner small"></div>
+                  <span>読み込み中...</span>
+                </div>
+              ) : (
+                <div className="stats-list">
+                  <p><strong>今月合計:</strong> {stats?.current_month?.total_hours ?? 0} 時間</p>
+                  {stats?.monthly && stats.monthly.length > 0 && (
+                    <ul>
+                      {stats.monthly.map(item => (
+                        <li key={item.month}>
+                          {item.month}: {item.total_hours} 時間
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>}
           </>
         )}
 
@@ -225,6 +341,49 @@ const Profile = () => {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className="form-group">
+              <label>従業員番号（閲覧のみ）</label>
+              <input
+                type="text"
+                value={formData.employee_number || ''}
+                disabled
+                aria-readonly="true"
+              />
+            </div>
+            {!isAdmin && !isGuide && <div className="form-group">
+              <label>運営側からのコメント（閲覧のみ）</label>
+              <textarea
+                value={formData.admin_comment || ''}
+                readOnly
+                aria-readonly="true"
+                rows={3}
+              />
+            </div>
+            }
+
+             <div className="form-group">
+              <label>今月の実績時間（報告書確定ベース）</label>
+              {statsLoading ? (
+                <div className="loading-inline">
+                  <div className="loading-spinner small"></div>
+                  <span>読み込み中...</span>
+                </div>
+              ) : (
+                <div className="stats-list">
+                  <p><strong>今月合計:</strong> {stats?.current_month?.total_hours ?? 0} 時間</p>
+                  {stats?.monthly && stats.monthly.length > 0 && (
+                    <ul>
+                      {stats.monthly.map(item => (
+                        <li key={item.month}>
+                          {item.month}: {item.total_hours} 時間
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}

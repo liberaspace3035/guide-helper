@@ -21,7 +21,6 @@ router.post('/', authenticateToken, requireRole('user'), [
   body('end_time').matches(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).withMessage('有効な終了時刻を入力してください'),
   body('meeting_place').optional()
 ], async (req, res) => {
-  console.log('リクエストボディ:', req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -43,9 +42,6 @@ router.post('/', authenticateToken, requireRole('user'), [
       notes,
       is_voice_input
     } = req.body;
-
-    console.log('リクエストボディ:', req.body);
-
 
     // 後方互換性: request_timeが指定されている場合はstart_timeとして使用
     const finalStartTime = start_time || request_time;
@@ -214,6 +210,113 @@ router.get('/my-requests', authenticateToken, requireRole('user'), async (req, r
   } catch (error) {
     console.error('依頼一覧取得エラー:', error);
     res.status(500).json({ error: '依頼一覧の取得中にエラーが発生しました' });
+  }
+});
+
+// 依頼に応募したガイド一覧取得（ユーザー自身のみ）
+router.get('/:id/applicants', authenticateToken, requireRole('user'), async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const userId = req.user.id;
+
+    // リクエスト所有確認
+    const [requests] = await pool.execute('SELECT user_id FROM requests WHERE id = ?', [requestId]);
+    if (requests.length === 0) {
+      return res.status(404).json({ error: '依頼が見つかりません' });
+    }
+    if (requests[0].user_id !== userId) {
+      return res.status(403).json({ error: 'この依頼の応募者を見る権限がありません' });
+    }
+
+    // 応募ガイドのIDと基本情報を取得（usersテーブルから）
+    const [guides] = await pool.execute(
+      `SELECT 
+         ga.guide_id,
+         ga.status,
+         ga.admin_decision,
+         ga.user_selected,
+         m.id AS matching_id,
+         u.name,
+         u.age,
+         u.gender
+       FROM guide_acceptances ga
+       INNER JOIN users u ON ga.guide_id = u.id
+       LEFT JOIN matchings m ON m.request_id = ga.request_id AND m.guide_id = ga.guide_id
+       WHERE ga.request_id = ?
+         AND ga.status = 'pending'
+       ORDER BY ga.created_at ASC`,
+      [requestId]
+    );
+
+    res.json({ guides });
+  } catch (error) {
+    console.error('応募者一覧取得エラー:', error);
+    res.status(500).json({ error: '応募者一覧の取得中にエラーが発生しました' });
+  }
+});
+
+// ユーザーのリクエストに紐づくマッチ済みガイドを取得
+router.get('/matched-guides/all', authenticateToken, requireRole('user'), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [matched] = await pool.execute(
+      `SELECT 
+         ga.request_id,
+         ga.guide_id,
+         m.id AS matching_id
+       FROM guide_acceptances ga
+       INNER JOIN requests r ON r.id = ga.request_id AND r.user_id = ?
+       LEFT JOIN matchings m ON m.request_id = ga.request_id AND m.guide_id = ga.guide_id
+       WHERE ga.status = 'matched'
+         AND ga.admin_decision = 'approved'
+         AND ga.user_selected = 1
+       ORDER BY ga.created_at DESC`,
+      [userId]
+    );
+
+    res.json({ matched });
+  } catch (error) {
+    console.error('マッチ済みガイド取得エラー:', error);
+    res.status(500).json({ error: 'マッチ済みガイドの取得中にエラーが発生しました' });
+  }
+});
+
+// ユーザーがガイドを選択（チャット遷移の代わりにフラグ更新）
+router.post('/:id/select-guide', authenticateToken, requireRole('user'), async (req, res) => {
+  try {
+    const requestId = req.params.id;
+    const userId = req.user.id;
+    const { guide_id } = req.body;
+
+    if (!guide_id) {
+      return res.status(400).json({ error: 'guide_idを指定してください' });
+    }
+
+    // リクエスト所有確認
+    const [requests] = await pool.execute('SELECT user_id FROM requests WHERE id = ?', [requestId]);
+    if (requests.length === 0) {
+      return res.status(404).json({ error: '依頼が見つかりません' });
+    }
+    if (requests[0].user_id !== userId) {
+      return res.status(403).json({ error: 'この依頼の応募者を更新する権限がありません' });
+    }
+
+    // pending の応募のみ選択対象
+    const [result] = await pool.execute(
+      `UPDATE guide_acceptances 
+       SET user_selected = TRUE 
+       WHERE request_id = ? AND guide_id = ? AND status = 'pending'`,
+      [requestId, guide_id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: '選択可能な応募が見つかりません（既に選択済み/状態変更済みの可能性）' });
+    }
+
+    res.json({ message: 'ガイドを選択しました', guide_id });
+  } catch (error) {
+    console.error('ガイド選択更新エラー:', error);
+    res.status(500).json({ error: 'ガイド選択の更新中にエラーが発生しました' });
   }
 });
 

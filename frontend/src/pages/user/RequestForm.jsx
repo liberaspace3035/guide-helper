@@ -28,8 +28,7 @@ const RequestForm = () => {
     start_time: defaultDateTime.start_time,
     end_time: defaultDateTime.end_time,
     guide_gender: 'none',
-    guide_age: 'none',
-    notes: ''
+    guide_age: 'none'
   });
   const [isVoiceInput, setIsVoiceInput] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -106,46 +105,10 @@ const RequestForm = () => {
     });
   };
 
-  // 時間を「X時」形式から「HH:MM」形式に変換
-  const parseTimeInput = (timeStr) => {
-    if (!timeStr) return '';
-    // 「X時」形式を「HH:00」形式に変換
-    const match = timeStr.match(/(\d+)時/);
-    if (match) {
-      const hour = parseInt(match[1], 10);
-      if (hour >= 0 && hour <= 23) {
-        return `${hour.toString().padStart(2, '0')}:00`;
-      }
-    }
-    // 既に「HH:MM」形式の場合はそのまま返す
-    if (timeStr.match(/^\d{2}:\d{2}$/)) {
-      return timeStr;
-    }
-    return '';
-  };
-
-  // 時間を「HH:MM」形式から「X時」形式に変換（表示用）
-  const formatTimeDisplay = (timeStr) => {
-    if (!timeStr) return '';
-    const match = timeStr.match(/(\d{2}):(\d{2})/);
-    if (match) {
-      const hour = parseInt(match[1], 10);
-      const minute = parseInt(match[2], 10);
-      if (minute === 0) {
-        return `${hour}時`;
-      } else {
-        return `${hour}時${minute}分`;
-      }
-    }
-    return timeStr;
-  };
-
   const handleTimeChange = (field, value) => {
-    // 「X時」形式で入力された場合、自動的に「HH:MM」形式に変換
-    const convertedTime = parseTimeInput(value);
     setFormData({
       ...formData,
-      [field]: convertedTime || value
+      [field]: value
     });
   };
 
@@ -358,81 +321,32 @@ const RequestForm = () => {
             <label htmlFor="start_time">希望時間 <span className="required">*</span></label>
             <div className="time-input-group">
               <input
-                type="text"
+                type="time"
                 id="start_time"
                 name="start_time"
-                value={formData.start_time ? formatTimeDisplay(formData.start_time) : ''}
+                value={formData.start_time}
                 onChange={(e) => handleTimeChange('start_time', e.target.value)}
-                onBlur={(e) => {
-                  const converted = parseTimeInput(e.target.value);
-                  if (converted) {
-                    setFormData({ ...formData, start_time: converted });
-                  }
-                }}
-                placeholder="例: 14時"
+                placeholder="hh:mm"
                 required
                 aria-required="true"
-                pattern="\d+時"
-                title="「X時」形式で入力してください（例: 14時）"
               />
               <span className="time-separator">～</span>
               <input
-                type="text"
+                type="time"
                 id="end_time"
                 name="end_time"
-                value={formData.end_time ? formatTimeDisplay(formData.end_time) : ''}
+                value={formData.end_time}
                 onChange={(e) => handleTimeChange('end_time', e.target.value)}
-                onBlur={(e) => {
-                  const converted = parseTimeInput(e.target.value);
-                  if (converted) {
-                    setFormData({ ...formData, end_time: converted });
-                  }
-                }}
-                placeholder="例: 16時"
+                placeholder="hh:mm"
                 required
                 aria-required="true"
-                pattern="\d+時"
-                title="「X時」形式で入力してください（例: 16時）"
               />
             </div>
-            <small>「X時」形式で入力してください（例: 14時～16時）</small>
+            <small>「hh:mm」形式で入力してください（例: 14:00～16:00）</small>
           </div>
         </div>
 
-        <div className="form-group full-width">
-          <label htmlFor="notes">備考・メモ</label>
-          <div className="voice-input-section">
-            <textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={4}
-              placeholder="音声入力も利用できます"
-            />
-            <div className="voice-controls">
-              <button
-                type="button"
-                onClick={startRecording}
-                disabled={isRecording}
-                className="btn-voice"
-                aria-label="音声入力を開始"
-              >
-                {isRecording ? '録音中...' : '🎤 音声入力開始'}
-              </button>
-              {isRecording && (
-                <button
-                  type="button"
-                  onClick={stopRecording}
-                  className="btn-voice-stop"
-                  aria-label="音声入力を停止"
-                >
-                  停止
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* 備考・メモ欄は不要のため削除 */}
 
         <div className="form-actions full-width">
           <button

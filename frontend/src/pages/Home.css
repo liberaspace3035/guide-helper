@@ -1,8 +1,13 @@
 /* ホームページスタイル */
+html {
+  scroll-behavior: smooth;
+}
+
 .home-container {
   width: 100%;
   min-height: 100vh;
   background-color: var(--background-color);
+  animation: fadeIn 0.4s ease;
 }
 
 /* ヒーローセクション */
@@ -184,6 +189,7 @@
   box-shadow: var(--shadow-sm);
   opacity: 0;
   animation: fadeInUp 0.6s ease-out forwards;
+  will-change: transform, box-shadow;
 }
 
 .feature-card:nth-child(1) {
@@ -245,6 +251,7 @@
   position: relative;
   opacity: 0;
   animation: fadeInUp 0.6s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .step-item:nth-child(1) {
@@ -296,6 +303,13 @@
   padding: var(--spacing-2xl) var(--spacing-lg);
   background: linear-gradient(135deg, var(--primary-light) 0%, var(--surface-color) 100%);
   text-align: center;
+}
+
+.cta-note {
+  margin-top: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .cta-title {

@@ -177,25 +177,27 @@ router.get('/reports/csv', async (req, res) => {
   try {
     const [reports] = await pool.execute(
       `SELECT r.id, r.actual_date, r.actual_start_time, r.actual_end_time,
-              u.name as user_name, u.email as user_email,
-              g.name as guide_name, g.email as guide_email,
+              u.name as user_name, u.email as user_email, up.recipient_number,
+              g.name as guide_name, g.email as guide_email, gp.employee_number,
               req.request_type, req.request_date,
               r.status, r.approved_at
        FROM reports r
        INNER JOIN users u ON r.user_id = u.id
+       LEFT JOIN user_profiles up ON up.user_id = u.id
        INNER JOIN users g ON r.guide_id = g.id
+       LEFT JOIN guide_profiles gp ON gp.user_id = g.id
        INNER JOIN requests req ON r.request_id = req.id
        WHERE r.status = 'approved'
        ORDER BY r.approved_at DESC`
     );
 
     // CSV形式に変換
-    const csvHeader = 'ID,利用日,開始時刻,終了時刻,ユーザー名,ユーザーメール,ガイド名,ガイドメール,依頼タイプ,依頼日,承認日時\n';
+    const csvHeader = 'ID,利用日,開始時刻,終了時刻,ユーザー名,ユーザーメール,受給者証番号,ガイド名,ガイドメール,従業員番号,依頼タイプ,依頼日,承認日時\n';
     const csvRows = reports.map(r => {
       const startTime = r.actual_start_time ? r.actual_start_time.substring(0, 5) : '';
       const endTime = r.actual_end_time ? r.actual_end_time.substring(0, 5) : '';
       const approvedAt = r.approved_at ? new Date(r.approved_at).toLocaleString('ja-JP') : '';
-      return `${r.id},${r.actual_date || ''},${startTime},${endTime},"${r.user_name}","${r.user_email}","${r.guide_name}","${r.guide_email}",${r.request_type},${r.request_date || ''},${approvedAt}`;
+      return `${r.id},${r.actual_date || ''},${startTime},${endTime},"${r.user_name}","${r.user_email}",${r.recipient_number || ''},"${r.guide_name}","${r.guide_email}",${r.employee_number || ''},${r.request_type},${r.request_date || ''},${approvedAt}`;
     }).join('\n');
 
     const csv = csvHeader + csvRows;
@@ -217,11 +219,14 @@ router.get('/usage/csv', async (req, res) => {
     let query = `SELECT r.id, r.actual_date, r.actual_start_time, r.actual_end_time,
                         TIMESTAMPDIFF(MINUTE, CONCAT(r.actual_date, ' ', r.actual_start_time), 
                                      CONCAT(r.actual_date, ' ', r.actual_end_time)) as duration_minutes,
-                        u.name as user_name, g.name as guide_name,
+                        u.name as user_name, up.recipient_number,
+                        g.name as guide_name, gp.employee_number,
                         req.request_type
                  FROM reports r
                  INNER JOIN users u ON r.user_id = u.id
+                 LEFT JOIN user_profiles up ON up.user_id = u.id
                  INNER JOIN users g ON r.guide_id = g.id
+                 LEFT JOIN guide_profiles gp ON gp.user_id = g.id
                  INNER JOIN requests req ON r.request_id = req.id
                  WHERE r.status = 'approved'`;
 
@@ -242,11 +247,11 @@ router.get('/usage/csv', async (req, res) => {
     const [reports] = await pool.execute(query, params);
 
     // CSV形式に変換
-    const csvHeader = 'ID,利用日,開始時刻,終了時刻,利用時間(分),ユーザー名,ガイド名,依頼タイプ\n';
+    const csvHeader = 'ID,利用日,開始時刻,終了時刻,利用時間(分),ユーザー名,受給者証番号,ガイド名,従業員番号,依頼タイプ\n';
     const csvRows = reports.map(r => {
       const startTime = r.actual_start_time ? r.actual_start_time.substring(0, 5) : '';
       const endTime = r.actual_end_time ? r.actual_end_time.substring(0, 5) : '';
-      return `${r.id},${r.actual_date || ''},${startTime},${endTime},${r.duration_minutes || 0},"${r.user_name}","${r.guide_name}",${r.request_type}`;
+      return `${r.id},${r.actual_date || ''},${startTime},${endTime},${r.duration_minutes || 0},"${r.user_name}",${r.recipient_number || ''},"${r.guide_name}",${r.employee_number || ''},${r.request_type}`;
     }).join('\n');
 
     const csv = csvHeader + csvRows;
@@ -348,7 +353,7 @@ router.get('/users', async (req, res) => {
   try {
     const [users] = await pool.execute(
       `SELECT u.id, u.email, u.name, u.phone, u.role, u.is_allowed, u.created_at,
-              up.contact_method, up.notes
+              up.contact_method, up.notes, up.recipient_number, up.admin_comment
        FROM users u
        LEFT JOIN user_profiles up ON u.id = up.user_id
        WHERE u.role = 'user'
@@ -367,7 +372,7 @@ router.get('/guides', async (req, res) => {
   try {
     const [guides] = await pool.execute(
       `SELECT u.id, u.email, u.name, u.phone, u.role, u.is_allowed, u.created_at,
-              gp.introduction, gp.available_areas, gp.available_days, gp.available_times
+              gp.introduction, gp.available_areas, gp.available_days, gp.available_times, gp.employee_number
        FROM users u
        LEFT JOIN guide_profiles gp ON u.id = gp.user_id
        WHERE u.role = 'guide'
@@ -544,6 +549,85 @@ router.put('/guides/:id/reject', async (req, res) => {
   } catch (error) {
     console.error('ガイド拒否エラー:', error);
     res.status(500).json({ error: 'ガイド拒否中にエラーが発生しました' });
+  }
+});
+
+// ガイドの従業員番号を更新（管理者のみ）
+router.put('/guides/:id/profile-extra', async (req, res) => {
+  try {
+    const guideId = req.params.id;
+    const { employee_number } = req.body;
+
+    // ガイド存在確認
+    const [guides] = await pool.execute(
+      'SELECT id FROM users WHERE id = ? AND role = ?',
+      [guideId, 'guide']
+    );
+    if (guides.length === 0) {
+      return res.status(404).json({ error: 'ガイドが見つかりません' });
+    }
+
+    // プロファイル行が無ければ作成
+    const [profiles] = await pool.execute(
+      'SELECT id FROM guide_profiles WHERE user_id = ?',
+      [guideId]
+    );
+
+    if (profiles.length > 0) {
+      await pool.execute(
+        'UPDATE guide_profiles SET employee_number = ? WHERE user_id = ?',
+        [employee_number || null, guideId]
+      );
+    } else {
+      await pool.execute(
+        'INSERT INTO guide_profiles (user_id, employee_number) VALUES (?, ?)',
+        [guideId, employee_number || null]
+      );
+    }
+
+    res.json({ message: '従業員番号を更新しました' });
+  } catch (error) {
+    console.error('ガイド従業員番号更新エラー:', error);
+    res.status(500).json({ error: 'ガイド従業員番号の更新中にエラーが発生しました' });
+  }
+});
+
+// ユーザーの受給者証番号を更新（管理者のみ）
+router.put('/users/:id/profile-extra', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { recipient_number, admin_comment } = req.body;
+
+    // ユーザー存在確認
+    const [users] = await pool.execute(
+      'SELECT id FROM users WHERE id = ? AND role = ?',
+      [userId, 'user']
+    );
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' });
+    }
+
+    const [profiles] = await pool.execute(
+      'SELECT id FROM user_profiles WHERE user_id = ?',
+      [userId]
+    );
+
+    if (profiles.length > 0) {
+      await pool.execute(
+        'UPDATE user_profiles SET recipient_number = ?, admin_comment = ? WHERE user_id = ?',
+        [recipient_number || null, admin_comment || null, userId]
+      );
+    } else {
+      await pool.execute(
+        'INSERT INTO user_profiles (user_id, recipient_number, admin_comment) VALUES (?, ?, ?)',
+        [userId, recipient_number || null, admin_comment || null]
+      );
+    }
+
+    res.json({ message: '受給者証番号とコメントを更新しました' });
+  } catch (error) {
+    console.error('受給者証番号更新エラー:', error);
+    res.status(500).json({ error: '受給者証番号の更新中にエラーが発生しました' });
   }
 });
 
