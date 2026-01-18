@@ -1,54 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Laravelアプリケーションの起動スクリプト
-# Railwayデプロイ時に使用
+set -e
 
-# set -eを削除（エラーが発生しても続行するようにする）
-
-# データベース接続が確立されるまで待機（最大30秒）
-echo "Waiting for database connection..."
-for i in {1..30}; do
-    # migrate:statusコマンドでデータベース接続をチェック
-    if php artisan migrate:status > /dev/null 2>&1; then
-        echo "Database connection established!"
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo "Warning: Could not establish database connection after 30 seconds"
-        echo "Continuing anyway..."
-        break
-    fi
-    echo "Waiting... ($i/30)"
-    sleep 1
+echo "Waiting for DB..."
+until php -r "
+try {
+    new PDO(
+        'mysql:host=' . getenv('DB_HOST') . ';dbname=' . getenv('DB_DATABASE'),
+        getenv('DB_USERNAME'),
+        getenv('DB_PASSWORD')
+    );
+} catch (Exception \$e) {
+    exit(1);
+}
+"; do
+  echo "DB not ready yet..."
+  sleep 2
 done
 
-# マイグレーションを実行（エラーが発生しても続行）
-echo "Running database migrations..."
-php artisan migrate --force || {
-    echo "Warning: Migration failed, but continuing..."
-}
+echo "DB is ready."
 
-# ストレージリンクを作成（既に存在する場合はスキップ）
-echo "Creating storage link..."
-php artisan storage:link || {
-    echo "Warning: Storage link already exists or failed"
-}
+php artisan migrate --force
 
-# キャッシュをクリアして再生成
-echo "Clearing and regenerating caches..."
-php artisan config:clear || true
-php artisan route:clear || true
-php artisan view:clear || true
-
-# 本番環境ではキャッシュを生成
-if [ "$APP_ENV" = "production" ]; then
-    echo "Generating production caches..."
-    php artisan config:cache || true
-    php artisan route:cache || true
-    # view:cacheはスキップ（必要に応じて自動生成される）
-fi
-
-# Laravelサーバーを起動
-echo "Starting Laravel server..."
-php artisan serve --host=0.0.0.0 --port=$PORT
-
+exec php artisan serve --host=0.0.0.0 --port=$PORT
