@@ -1,5 +1,6 @@
 # 依存関係
 node_modules/
+vendor/
 
 # 環境変数
 .env
