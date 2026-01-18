@@ -2,15 +2,10 @@
 set -e
 
 echo "Waiting for DB..."
+
 until php -r "
 try {
-    new PDO(
-        'mysql:host=' . getenv('MYSQLHOST') .
-        ';port=' . getenv('MYSQLPORT') .
-        ';dbname=' . getenv('MYSQLDATABASE'),
-        getenv('MYSQLUSER'),
-        getenv('MYSQLPASSWORD')
-    );
+    new PDO(getenv('MYSQL_PUBLIC_URL'));
 } catch (Exception \$e) {
     exit(1);
 }
