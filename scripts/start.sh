@@ -3,9 +3,12 @@ set -e
 
 echo "Waiting for DB..."
 
+# PDO 用に環境変数を展開
+DB_DSN="mysql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE};charset=utf8mb4"
+
 until php -r "
 try {
-    \$pdo = new PDO(getenv('MYSQL_PUBLIC_URL'));
+    \$pdo = new PDO('${DB_DSN}', getenv('DB_USERNAME'), getenv('DB_PASSWORD'));
     echo 'DB is ready!' . PHP_EOL;
 } catch (Exception \$e) {
     echo 'DB connection failed: ' . \$e->getMessage() . PHP_EOL;
