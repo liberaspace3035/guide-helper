@@ -35,6 +35,9 @@
         }
     },
     "scripts": {
+        "pre-install-cmd": [
+            "@php -r \"if (!is_dir('bootstrap/cache')) { mkdir('bootstrap/cache', 0755, true); }\""
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\Composer\\Scripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

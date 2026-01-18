@@ -16,11 +16,12 @@ public/build/
 *.log
 storage/logs/
 
-# Cache
-bootstrap/cache/
-storage/framework/cache/
-storage/framework/sessions/
-storage/framework/views/
+# Cache (exclude cache files, but keep directory structure)
+bootstrap/cache/*
+!bootstrap/cache/.gitkeep
+storage/framework/cache/data/
+storage/framework/sessions/*
+storage/framework/views/*
 
 # IDE
 .vscode/
