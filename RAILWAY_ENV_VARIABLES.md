@@ -108,14 +108,20 @@ MAIL_MAILER=log
 |--------|------|-----|------|
 | `SESSION_DRIVER` | セッションドライバー | `file` | `file`, `database`, `cookie` など |
 | `SESSION_LIFETIME` | セッション有効期限（分） | `120` | デフォルト: 120分 |
+| `SESSION_SECURE_COOKIE` | HTTPSのみでクッキーを送信 | `true` | **HTTPS環境では必須（本番環境では必ず`true`）** |
+| `SESSION_SAME_SITE` | Same-Site Cookie設定 | `lax` | `lax`, `strict`, `none` |
 | `CACHE_STORE` | キャッシュストア | `file` | `file`, `database`, `redis` など |
 
-**設定例:**
+**設定例（本番環境 - HTTPS必須）:**
 ```env
 SESSION_DRIVER=file
 SESSION_LIFETIME=120
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=lax
 CACHE_STORE=file
 ```
+
+**⚠️ 重要**: RailwayのHTTPS環境では、`SESSION_SECURE_COOKIE=true`を必ず設定してください。設定しないと419エラー（CSRFトークン検証失敗）が発生する可能性があります。
 
 #### 3. その他のアプリケーション設定
 

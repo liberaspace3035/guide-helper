@@ -3,12 +3,13 @@
 # Laravelアプリケーションの起動スクリプト
 # Railwayデプロイ時に使用
 
-set -e
+# set -eを削除（エラーが発生しても続行するようにする）
 
 # データベース接続が確立されるまで待機（最大30秒）
 echo "Waiting for database connection..."
 for i in {1..30}; do
-    if php artisan db:show > /dev/null 2>&1; then
+    # migrate:statusコマンドでデータベース接続をチェック
+    if php artisan migrate:status > /dev/null 2>&1; then
         echo "Database connection established!"
         break
     fi
