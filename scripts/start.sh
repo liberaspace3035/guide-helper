@@ -5,7 +5,15 @@ echo "Waiting for DB..."
 
 until php -r "
 try {
-    new PDO(getenv('MYSQL_PUBLIC_URL'));
+    \$dsn = 'mysql:host=' . getenv('DB_HOST') .
+           ';port=' . getenv('DB_PORT') .
+           ';dbname=' . getenv('DB_DATABASE');
+    new PDO(
+        \$dsn,
+        getenv('DB_USERNAME'),
+        getenv('DB_PASSWORD'),
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
 } catch (Exception \$e) {
     exit(1);
 }
@@ -18,4 +26,4 @@ echo "DB is ready."
 
 php artisan migrate --force
 
-exec php artisan serve --host=0.0.0.0 --port=\$PORT
+exec php artisan serve --host=0.0.0.0 --port=${PORT}
