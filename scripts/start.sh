@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Waiting for DB..."
+echo "["$(date '+%Y-%m-%d %H:%M:%S')"] Waiting for DB..."
 
 DB_DSN="mysql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE};charset=utf8mb4"
+echo "["$(date '+%Y-%m-%d %H:%M:%S')"] DSN: ${DB_DSN}"
+echo "["$(date '+%Y-%m-%d %H:%M:%S')"] USER: ${DB_USERNAME}"
+# echo "["$(date '+%Y-%m-%d %H:%M:%S')"] PASSWORD: ${DB_PASSWORD}"  # セキュリティ上非表示推奨
 
 until php -r "
 try {
@@ -19,13 +22,10 @@ try {
     echo '[' . date('Y-m-d H:i:s') . '] DB is ready!' . PHP_EOL;
 } catch (Exception \$e) {
     echo '[' . date('Y-m-d H:i:s') . '] DB connection failed: ' . \$e->getMessage() . PHP_EOL;
-    echo '[' . date('Y-m-d H:i:s') . '] DSN: ${DB_DSN}' . PHP_EOL;
-    echo '[' . date('Y-m-d H:i:s') . '] USER: ' . getenv('DB_USERNAME') . PHP_EOL;
-    echo '[' . date('Y-m-d H:i:s') . '] PASSWORD: ' . getenv('DB_PASSWORD') . PHP_EOL;
     exit(1);
 }
 "; do
-  echo '['$(date '+%Y-%m-%d %H:%M:%S')'] DB not ready yet...'
+  echo "["$(date '+%Y-%m-%d %H:%M:%S')"] DB not ready yet..."
   sleep 2
 done
 
