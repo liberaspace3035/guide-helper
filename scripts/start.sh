@@ -1,29 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-# -----------------------------
-# Start Script for Railway App
-# -----------------------------
+echo "Waiting for DB..."
 
-echo "Waiting for Database..."
-
-# DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD は
-# Railway の Variable Reference で DB サービスを指す前提
-DB_HOST=${DB_HOST:-mysql.railway.internal}
-DB_PORT=${DB_PORT:-3306}
-DB_DATABASE=${DB_DATABASE:-railway}
-DB_USERNAME=${DB_USERNAME:-root}
-DB_PASSWORD=${DB_PASSWORD:-}
-
-# DB が準備できるまでループ
 until php -r "
 try {
-    \$pdo = new PDO(
-        'mysql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}',
-        '${DB_USERNAME}',
-        '${DB_PASSWORD}'
-    );
+    \$pdo = new PDO(getenv('MYSQL_PUBLIC_URL'));
+    echo 'DB is ready!' . PHP_EOL;
 } catch (Exception \$e) {
+    echo 'DB connection failed: ' . \$e->getMessage() . PHP_EOL;
     exit(1);
 }
 "; do
@@ -31,10 +16,8 @@ try {
   sleep 2
 done
 
-echo "DB is ready!"
-
-# マイグレーション実行（強制）
+echo "Running migrations..."
 php artisan migrate --force
 
-# アプリ起動
-exec php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+echo "Starting server..."
+exec php artisan serve --host=0.0.0.0 --port=\$PORT
