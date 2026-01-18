@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('reports', function (Blueprint $table) {
-            $table->text('revision_notes')->nullable()->after('status')->comment('修正依頼内容');
-        });
+        if (Schema::hasTable('reports')) {
+            Schema::table('reports', function (Blueprint $table) {
+                if (!Schema::hasColumn('reports', 'revision_notes')) {
+                    $table->text('revision_notes')->nullable()->after('status')->comment('修正依頼内容');
+                }
+            });
+        }
     }
 
     /**
