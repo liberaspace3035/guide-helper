@@ -1,0 +1,41 @@
+# Dependencies
+vendor/
+node_modules/
+
+# Environment
+.env
+.env.backup*
+*.env
+
+# Build outputs
+dist/
+build/
+public/build/
+
+# Logs
+*.log
+storage/logs/
+
+# Cache
+bootstrap/cache/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (optional, but reduces context size)
+docs/
+
