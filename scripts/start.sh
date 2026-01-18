@@ -3,7 +3,7 @@ set -e
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Laravel service..."
 
-# Railway Public Proxy 用の DSN
+# DSN の組み立て
 DB_DSN="mysql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE};charset=utf8mb4"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Waiting for DB at ${DB_HOST}:${DB_PORT}..."
@@ -17,7 +17,8 @@ try {
         getenv('DB_PASSWORD'),
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::MYSQL_ATTR_SSL_CA => null  // SSL が必要ならここで設定可能
+            PDO::MYSQL_ATTR_SSL_CA => null,      // SSL 無効にする場合 null
+            PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false
         ]
     );
     echo '[' . date('Y-m-d H:i:s') . '] DB is ready!' . PHP_EOL;
