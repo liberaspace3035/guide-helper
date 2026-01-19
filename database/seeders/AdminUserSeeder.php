@@ -35,7 +35,6 @@ class AdminUserSeeder extends Seeder
             'first_name' => '者',
             'role' => 'admin',
             'is_allowed' => true, // 管理者は承認不要
-            'email_confirmed' => true, // 管理者はメール確認済みとする
         ]);
 
         $this->command->info("管理者アカウントを作成しました:");
