@@ -35,7 +35,7 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running migrations..."
 php artisan migrate --force
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Seeding admin user..."
-php artisan db:seed --class=AdminUserSeeder
+php artisan db:seed --class=AdminUserSeeder --force
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Laravel server..."
 exec php artisan serve --host=0.0.0.0 --port=$PORT
