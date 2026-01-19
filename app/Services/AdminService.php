@@ -115,10 +115,10 @@ class AdminService
         $matchingStats = DB::table('matchings')
             ->selectRaw('
                 COUNT(*) as total,
-                SUM(CASE WHEN status = "matched" THEN 1 ELSE 0 END) as matched,
-                SUM(CASE WHEN status = "in_progress" THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed,
-                SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled
+                SUM(CASE WHEN status = \'matched\' THEN 1 ELSE 0 END) as matched,
+                SUM(CASE WHEN status = \'in_progress\' THEN 1 ELSE 0 END) as in_progress,
+                SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = \'cancelled\' THEN 1 ELSE 0 END) as cancelled
             ')
             ->first();
 
@@ -126,12 +126,12 @@ class AdminService
         $requestStats = DB::table('requests')
             ->selectRaw('
                 COUNT(*) as total,
-                SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = "guide_accepted" THEN 1 ELSE 0 END) as guide_accepted,
-                SUM(CASE WHEN status = "matched" THEN 1 ELSE 0 END) as matched,
-                SUM(CASE WHEN status = "in_progress" THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed,
-                SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled
+                SUM(CASE WHEN status = \'pending\' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = \'guide_accepted\' THEN 1 ELSE 0 END) as guide_accepted,
+                SUM(CASE WHEN status = \'matched\' THEN 1 ELSE 0 END) as matched,
+                SUM(CASE WHEN status = \'in_progress\' THEN 1 ELSE 0 END) as in_progress,
+                SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = \'cancelled\' THEN 1 ELSE 0 END) as cancelled
             ')
             ->first();
 
@@ -162,8 +162,8 @@ class AdminService
             ->where('role', 'user')
             ->selectRaw('
                 COUNT(*) as total,
-                SUM(CASE WHEN is_allowed = 1 THEN 1 ELSE 0 END) as approved,
-                SUM(CASE WHEN is_allowed = 0 THEN 1 ELSE 0 END) as pending
+                SUM(CASE WHEN is_allowed = true THEN 1 ELSE 0 END) as approved,
+                SUM(CASE WHEN is_allowed = false THEN 1 ELSE 0 END) as pending
             ')
             ->first();
 
@@ -172,8 +172,8 @@ class AdminService
             ->where('role', 'guide')
             ->selectRaw('
                 COUNT(*) as total,
-                SUM(CASE WHEN is_allowed = 1 THEN 1 ELSE 0 END) as approved,
-                SUM(CASE WHEN is_allowed = 0 THEN 1 ELSE 0 END) as pending
+                SUM(CASE WHEN is_allowed = true THEN 1 ELSE 0 END) as approved,
+                SUM(CASE WHEN is_allowed = false THEN 1 ELSE 0 END) as pending
             ')
             ->first();
 
