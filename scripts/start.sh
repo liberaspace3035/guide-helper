@@ -3,10 +3,10 @@ set -e
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Laravel service..."
 
-# DSN の組み立て
-DB_DSN="mysql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE};charset=utf8mb4"
+# PostgreSQL DSN の組み立て
+DB_DSN="pgsql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}"
 
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Waiting for DB at ${DB_HOST}:${DB_PORT}..."
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}..."
 
 # DB が使えるようになるまでループ
 until php -r "
@@ -16,17 +16,14 @@ try {
         getenv('DB_USERNAME'),
         getenv('DB_PASSWORD'),
         [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::MYSQL_ATTR_SSL_CA => null,      // SSL 無効にする場合 null
-            PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         ]
     );
-    echo '[' . date('Y-m-d H:i:s') . '] DB is ready!' . PHP_EOL;
+    echo '[' . date('Y-m-d H:i:s') . '] PostgreSQL is ready!' . PHP_EOL;
 } catch (Exception \$e) {
-    echo '[' . date('Y-m-d H:i:s') . '] DB connection failed: ' . \$e->getMessage() . PHP_EOL;
+    echo '[' . date('Y-m-d H:i:s') . '] PostgreSQL connection failed: ' . \$e->getMessage() . PHP_EOL;
     echo '[' . date('Y-m-d H:i:s') . '] DSN: ${DB_DSN}' . PHP_EOL;
     echo '[' . date('Y-m-d H:i:s') . '] USER: ' . getenv('DB_USERNAME') . PHP_EOL;
-    echo '[' . date('Y-m-d H:i:s') . '] PASSWORD: ' . getenv('DB_PASSWORD') . PHP_EOL;
     exit(1);
 }
 "; do
