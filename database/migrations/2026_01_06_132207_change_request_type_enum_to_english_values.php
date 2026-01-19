@@ -11,19 +11,34 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 既存データの変換（日本語 → 英語コード値）
-        // まず一時カラムを追加してデータを変換
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ADD COLUMN request_type_temp VARCHAR(10) NULL");
-        \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type_temp = CASE WHEN request_type = '外出' THEN 'outing' WHEN request_type = '自宅' THEN 'home' ELSE NULL END");
+        $driver = \Illuminate\Support\Facades\DB::getDriverName();
         
-        // ENUM定義を英語コード値に変更
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests MODIFY COLUMN request_type ENUM('outing', 'home') NOT NULL COMMENT '依頼タイプ'");
-        
-        // 変換したデータをコピー
-        \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type = request_type_temp WHERE request_type_temp IS NOT NULL");
-        
-        // 一時カラムを削除
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests DROP COLUMN request_type_temp");
+        if ($driver === 'pgsql') {
+            // PostgreSQL用の処理
+            // 既存データの変換（日本語 → 英語コード値）
+            \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type = CASE WHEN request_type = '外出' THEN 'outing' WHEN request_type = '自宅' THEN 'home' ELSE request_type END");
+            
+            // PostgreSQLではCHECK制約を追加してENUM相当の制約を設定
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_request_type_check");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ADD CONSTRAINT requests_request_type_check CHECK (request_type IN ('outing', 'home'))");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ALTER COLUMN request_type SET NOT NULL");
+            \Illuminate\Support\Facades\DB::statement("COMMENT ON COLUMN requests.request_type IS '依頼タイプ'");
+        } else {
+            // MySQL用の処理（既存の処理）
+            // 既存データの変換（日本語 → 英語コード値）
+            // まず一時カラムを追加してデータを変換
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ADD COLUMN request_type_temp VARCHAR(10) NULL");
+            \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type_temp = CASE WHEN request_type = '外出' THEN 'outing' WHEN request_type = '自宅' THEN 'home' ELSE NULL END");
+            
+            // ENUM定義を英語コード値に変更
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests MODIFY COLUMN request_type ENUM('outing', 'home') NOT NULL COMMENT '依頼タイプ'");
+            
+            // 変換したデータをコピー
+            \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type = request_type_temp WHERE request_type_temp IS NOT NULL");
+            
+            // 一時カラムを削除
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests DROP COLUMN request_type_temp");
+        }
     }
 
     /**
@@ -31,18 +46,33 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // 既存データを英語コード値から日本語に戻す
-        // まず一時カラムを追加してデータを変換
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ADD COLUMN request_type_temp VARCHAR(10) NULL");
-        \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type_temp = CASE WHEN request_type = 'outing' THEN '外出' WHEN request_type = 'home' THEN '自宅' ELSE NULL END");
+        $driver = \Illuminate\Support\Facades\DB::getDriverName();
         
-        // ENUM定義を日本語に戻す
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests MODIFY COLUMN request_type ENUM('外出', '自宅') NOT NULL COMMENT '依頼タイプ'");
-        
-        // 変換したデータをコピー
-        \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type = request_type_temp WHERE request_type_temp IS NOT NULL");
-        
-        // 一時カラムを削除
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests DROP COLUMN request_type_temp");
+        if ($driver === 'pgsql') {
+            // PostgreSQL用の処理
+            // 既存データを英語コード値から日本語に戻す
+            \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type = CASE WHEN request_type = 'outing' THEN '外出' WHEN request_type = 'home' THEN '自宅' ELSE request_type END");
+            
+            // PostgreSQLではCHECK制約を追加してENUM相当の制約を設定
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests DROP CONSTRAINT IF EXISTS requests_request_type_check");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ADD CONSTRAINT requests_request_type_check CHECK (request_type IN ('外出', '自宅'))");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ALTER COLUMN request_type SET NOT NULL");
+            \Illuminate\Support\Facades\DB::statement("COMMENT ON COLUMN requests.request_type IS '依頼タイプ'");
+        } else {
+            // MySQL用の処理（既存の処理）
+            // 既存データを英語コード値から日本語に戻す
+            // まず一時カラムを追加してデータを変換
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests ADD COLUMN request_type_temp VARCHAR(10) NULL");
+            \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type_temp = CASE WHEN request_type = 'outing' THEN '外出' WHEN request_type = 'home' THEN '自宅' ELSE NULL END");
+            
+            // ENUM定義を日本語に戻す
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests MODIFY COLUMN request_type ENUM('外出', '自宅') NOT NULL COMMENT '依頼タイプ'");
+            
+            // 変換したデータをコピー
+            \Illuminate\Support\Facades\DB::statement("UPDATE requests SET request_type = request_type_temp WHERE request_type_temp IS NOT NULL");
+            
+            // 一時カラムを削除
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE requests DROP COLUMN request_type_temp");
+        }
     }
 };
