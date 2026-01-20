@@ -221,7 +221,34 @@ class AuthController extends Controller
 
         // セッション認証でログイン
         auth()->login($user);
+        
+        // JWTトークンを生成（セッション再生成前に生成）
+        $jwtToken = null;
+        try {
+            if (empty(config('jwt.secret'))) {
+                \Log::warning('JWT_SECRETが設定されていません。JWTトークンを生成できません。');
+            } else {
+                $jwtToken = JWTAuth::fromUser($user);
+                if ($jwtToken) {
+                    \Log::info('JWTトークンを生成しました', ['user_id' => $user->id]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('ログイン時のJWTトークン生成エラー: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            // トークン生成に失敗してもログインは続行
+        }
+        
+        // セッションを再生成（セキュリティのため）
         $request->session()->regenerate();
+        
+        // 再生成後のセッションにJWTトークンを保存
+        if ($jwtToken) {
+            $request->session()->put('jwt_token', $jwtToken);
+            \Log::info('JWTトークンをセッションに保存しました', ['user_id' => $user->id]);
+        }
 
         // ロールに応じてリダイレクト
         if ($user->role === 'admin') {

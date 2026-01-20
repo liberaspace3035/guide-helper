@@ -933,9 +933,25 @@ function adminDashboard() {
         userCurrentLimits: {}, // 現在の月の限度時間情報を保持
 
         async init() {
+            // トークン生成エラーがある場合、ユーザーに通知
+            @if(isset($jwt_token_error) && $jwt_token_error)
+                console.error('JWTトークン生成エラー:', '{{ $jwt_token_error }}');
+                alert('認証トークンの生成に失敗しました。\n\nエラー: {{ $jwt_token_error }}\n\n本番環境のJWT_SECRET設定を確認してください。\n\nページをリロードします。');
+                window.location.reload();
+                return;
+            @endif
+            
             // サーバーから渡されたJWTトークンをlocalStorageに保存
             @if(isset($jwt_token) && $jwt_token)
-                localStorage.setItem('token', '{{ $jwt_token }}');
+                try {
+                    localStorage.setItem('token', '{{ $jwt_token }}');
+                    console.log('✅ JWTトークンをlocalStorageに保存しました');
+                } catch (e) {
+                    console.error('❌ localStorageへの保存に失敗しました:', e);
+                    alert('ブラウザのストレージへのアクセスに失敗しました。ブラウザの設定を確認してください。');
+                }
+            @else
+                console.warn('⚠️ サーバーからJWTトークンが渡されていません');
             @endif
             
             await this.fetchDashboardData();
@@ -949,13 +965,25 @@ function adminDashboard() {
                 @if(isset($jwt_token) && $jwt_token)
                     if (!token) {
                         token = '{{ $jwt_token }}';
-                        localStorage.setItem('token', token);
+                        try {
+                            localStorage.setItem('token', token);
+                            console.log('✅ トークンをlocalStorageに再保存しました');
+                        } catch (e) {
+                            console.error('❌ localStorageへの再保存に失敗しました:', e);
+                        }
                     }
                 @endif
                 
                 if (!token) {
                     console.error('トークンが存在しません。ログインしてください。');
-                    alert('ログインが必要です。ログインページにリダイレクトします。');
+                    
+                    // トークン生成エラーがある場合、その情報も表示
+                    @if(isset($jwt_token_error) && $jwt_token_error)
+                        alert('認証トークンが取得できませんでした。\n\nエラー: {{ $jwt_token_error }}\n\n本番環境のJWT_SECRET設定を確認してください。\n\nログインページにリダイレクトします。');
+                    @else
+                        alert('ログインが必要です。ログインページにリダイレクトします。');
+                    @endif
+                    
                     window.location.href = '/login';
                     return;
                 }
