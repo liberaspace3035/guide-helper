@@ -99,17 +99,11 @@ function guideRequestsData() {
         },
         async fetchRequests() {
             try {
-                const token = localStorage.getItem('token');
-                const headers = {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-                
                 const response = await fetch('/api/requests/guide/available', {
-                    headers: headers,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     credentials: 'same-origin'
                 });
                 const data = await response.json();
@@ -136,19 +130,13 @@ function guideRequestsData() {
             }
 
             try {
-                const token = localStorage.getItem('token');
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-                
                 const response = await fetch('/api/matchings/accept', {
                     method: 'POST',
-                    headers: headers,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     credentials: 'same-origin',
                     body: JSON.stringify({ request_id: requestId })
                 });
@@ -177,19 +165,13 @@ function guideRequestsData() {
             }
 
             try {
-                const token = localStorage.getItem('token');
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-                
                 const response = await fetch('/api/matchings/decline', {
                     method: 'POST',
-                    headers: headers,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     credentials: 'same-origin',
                     body: JSON.stringify({ request_id: requestId })
                 });

@@ -263,9 +263,6 @@ function profileForm() {
         saving: false,
         init() {
             // サーバーから渡されたJWTトークンをlocalStorageに保存
-            @if(isset($jwt_token) && $jwt_token)
-                localStorage.setItem('token', '{{ $jwt_token }}');
-            @endif
             // プロフィール編集画面では統計情報の取得は不要
         },
         handleSubmit() {

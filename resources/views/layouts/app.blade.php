@@ -198,10 +198,6 @@
                 activeMatchingId: null,
                 intervalId: null,
                 init() {
-                    // サーバーから渡されたJWTトークンをlocalStorageに保存
-                    @if(isset($jwt_token) && $jwt_token)
-                        localStorage.setItem('token', '{{ $jwt_token }}');
-                    @endif
                     this.fetchUnreadCount();
                     this.fetchActiveMatching();
                     // 30秒ごとに未読メッセージ数を更新
@@ -215,14 +211,12 @@
                 },
                 async fetchUnreadCount() {
                     try {
-                        const token = localStorage.getItem('token');
-                        if (!token) return;
-                        
                         const response = await fetch('/api/chat/unread-count', {
                             headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Accept': 'application/json'
-                            }
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'same-origin'
                         });
                         
                         if (response.ok) {
@@ -235,14 +229,12 @@
                 },
                 async fetchActiveMatching() {
                     try {
-                        const token = localStorage.getItem('token');
-                        if (!token) return;
-                        
                         const response = await fetch('/api/matchings/my-matchings', {
                             headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Accept': 'application/json'
-                            }
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'same-origin'
                         });
                         
                         if (response.ok) {

@@ -1178,14 +1178,12 @@ function adminDashboard() {
         },
 
         exportCSV(type) {
-            const token = localStorage.getItem('token');
             const url = type === 'reports' 
                 ? '/api/admin/reports/csv'
                 : '/api/admin/usage/csv';
             window.open(`${url}?token=${token}`, '_blank');
         },
         exportReportCSV(reportId) {
-            const token = localStorage.getItem('token');
             const url = `/api/admin/reports/${reportId}/csv`;
             window.open(`${url}?token=${token}`, '_blank');
         },
@@ -1194,7 +1192,6 @@ function adminDashboard() {
             if (!confirm('この報告書を管理者承認しますか？')) return;
             
             try {
-                const token = localStorage.getItem('token');
                 if (!token) {
                     alert('トークンが存在しません。再度ログインしてください。');
                     window.location.href = '/login';
@@ -1266,7 +1263,6 @@ function adminDashboard() {
         async rejectUser(userId) {
             if (!confirm('このユーザーを拒否しますか？')) return;
             try {
-                const token = localStorage.getItem('token');
 
                 const response = await fetch(`/api/admin/users/${userId}/reject`, {
                     method: 'PUT',
@@ -1452,7 +1448,6 @@ function adminDashboard() {
 
         async fetchOperationLogs(operationType = '') {
             try {
-                const token = localStorage.getItem('token');
                 const url = `/api/admin/operation-logs${operationType ? '?operation_type=' + operationType : ''}`;
                 const response = await fetch(url, {
                     headers: {
@@ -1627,7 +1622,6 @@ function adminDashboard() {
 
         async fetchUserCurrentLimit(userId) {
             try {
-                const token = localStorage.getItem('token');
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = now.getMonth() + 1;
@@ -1764,7 +1758,6 @@ function announcementManagement() {
             }
 
             try {
-                const token = localStorage.getItem('token');
                 const url = this.editingId 
                     ? `/api/announcements/admin/${this.editingId}`
                     : '/api/announcements/admin';

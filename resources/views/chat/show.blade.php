@@ -206,9 +206,6 @@ function chatData() {
         },
         init() {
             // サーバーから渡されたJWTトークンをlocalStorageに保存
-            @if(isset($jwt_token) && $jwt_token)
-                localStorage.setItem('token', '{{ $jwt_token }}');
-            @endif
             
             console.log('Chat init - userId:', this.userId, 'type:', typeof this.userId);
             this.fetchMatchingInfo();
@@ -228,9 +225,10 @@ function chatData() {
             try {
                 const response = await fetch('/api/matchings/my-matchings', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -248,9 +246,10 @@ function chatData() {
                 if (showLoading) this.loading = true;
                 const response = await fetch(`/api/chat/messages/${this.matchingId}`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -293,16 +292,15 @@ function chatData() {
             this.$nextTick(() => this.scrollToBottom(true));
 
             try {
-                const token = localStorage.getItem('token');
-                console.log('Sending message with token:', token ? 'token exists' : 'no token');
                 console.log('Current userId from Alpine:', this.userId);
                 const response = await fetch('/api/chat/messages', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         matching_id: this.matchingId,
                         message: messageToSend

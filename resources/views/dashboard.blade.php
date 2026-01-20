@@ -778,12 +778,12 @@ function dashboardData() {
             this.loadingMonthStats = true;
             try {
                 const [year, month] = monthString.split('-');
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/reports/usage-stats?year=${year}&month=${month}`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -804,21 +804,14 @@ function dashboardData() {
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = now.getMonth() + 1;
-                const token = localStorage.getItem('token');
-                
-                // セッション認証の場合はtokenを使わない
-                const headers = {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                };
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
                 
                 const response = await fetch(`/api/users/me/monthly-limit?year=${year}&month=${month}`, {
                     method: 'GET',
-                    headers: headers,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    },
                     credentials: 'same-origin'
                 });
                 

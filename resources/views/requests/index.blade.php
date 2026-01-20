@@ -153,40 +153,18 @@ function requestsData() {
         matchedGuideMap: {},
         selectMessageMap: {},
         init() {
-            // サーバーから渡されたJWTトークンをlocalStorageに保存
-            @if(isset($jwt_token) && $jwt_token)
-                localStorage.setItem('token', '{{ $jwt_token }}');
-            @endif
             // selecting状態を明示的にリセット
             this.selecting = {};
             this.fetchRequests();
         },
         async fetchRequests() {
             try {
-                let token = localStorage.getItem('token');
-                
-                // サーバーから渡されたトークンがまだ保存されていない場合、再度取得を試みる
-                @if(isset($jwt_token) && $jwt_token)
-                    if (!token) {
-                        token = '{{ $jwt_token }}';
-                        localStorage.setItem('token', token);
-                    }
-                @endif
-                
-                if (!token) {
-                    console.error('トークンが存在しません。ログインしてください。');
-                    this.error = 'ログインが必要です。ログインページにリダイレクトします。';
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
-                    return;
-                }
-                
                 const response = await fetch('/api/requests/my-requests', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 
                 if (!response.ok) {
@@ -207,9 +185,10 @@ function requestsData() {
             try {
                 const res = await fetch('/api/requests/matched-guides/all', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await res.json();
                 const matched = {};
@@ -261,9 +240,10 @@ function requestsData() {
             try {
                 const res = await fetch(`/api/requests/${requestId}/applicants`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await res.json();
                 const guides = data.guides || [];
@@ -285,10 +265,11 @@ function requestsData() {
                 const res = await fetch(`/api/requests/${requestId}/select-guide`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ guide_id: guideId })
                 });
                 const data = await res.json();

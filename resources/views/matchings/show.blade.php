@@ -68,9 +68,10 @@ function matchingData() {
             try {
                 const response = await fetch('/api/matchings/my-matchings', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 const match = data.matchings?.find(m => m.id === parseInt(this.matchingId));

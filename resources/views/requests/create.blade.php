@@ -298,12 +298,12 @@ function requestForm() {
         async fetchAvailableGuides() {
             this.guidesLoading = true;
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/guides/available', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 if (response.ok) {
                     const data = await response.json();
