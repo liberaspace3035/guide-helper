@@ -1181,23 +1181,17 @@ function adminDashboard() {
             const url = type === 'reports' 
                 ? '/api/admin/reports/csv'
                 : '/api/admin/usage/csv';
-            window.open(`${url}?token=${token}`, '_blank');
+            window.open(url, '_blank');
         },
         exportReportCSV(reportId) {
             const url = `/api/admin/reports/${reportId}/csv`;
-            window.open(`${url}?token=${token}`, '_blank');
+            window.open(url, '_blank');
         },
 
         async approveReport(reportId) {
             if (!confirm('この報告書を管理者承認しますか？')) return;
             
             try {
-                if (!token) {
-                    alert('トークンが存在しません。再度ログインしてください。');
-                    window.location.href = '/login';
-                    return;
-                }
-
                 const response = await fetch(`/api/admin/reports/${reportId}/approve`, {
                     method: 'POST',
                     headers: {
