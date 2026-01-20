@@ -10,7 +10,31 @@
     <meta name="theme-color" content="#2563eb">
     @vite(['resources/css/app.scss'])
     @stack('styles')
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js with fallback -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" 
+            onerror="loadAlpineFallback()"></script>
+    <script>
+        function loadAlpineFallback() {
+            console.warn('Primary CDN failed, loading Alpine.js from fallback...');
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js';
+            script.defer = true;
+            script.onerror = function() {
+                console.error('All Alpine.js CDNs failed. Please check your internet connection.');
+            };
+            document.head.appendChild(script);
+        }
+        
+        // ページロード後にAlpine.jsが読み込まれたか確認
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                if (typeof window.Alpine === 'undefined') {
+                    console.warn('Alpine.js not loaded, attempting fallback...');
+                    loadAlpineFallback();
+                }
+            }, 2000);
+        });
+    </script>
 </head>
 <body>
     <div class="layout" x-data="{ sidebarVisible: window.innerWidth > 768, isMobile: window.innerWidth <= 768 }" 
