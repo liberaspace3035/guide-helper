@@ -225,8 +225,22 @@ class AuthController extends Controller
         // JWTトークンを生成（セッション再生成前に生成）
         $jwtToken = null;
         try {
-            if (empty(config('jwt.secret'))) {
-                \Log::warning('JWT_SECRETが設定されていません。JWTトークンを生成できません。');
+            // JWT_SECRETが設定されているか確認（複数の方法でチェック）
+            $jwtSecret = config('jwt.secret');
+            $jwtSecretEnv = env('JWT_SECRET');
+            
+            if (empty($jwtSecret) && !empty($jwtSecretEnv)) {
+                \Log::warning('config()からJWT_SECRETが取得できませんが、env()から取得できました。configキャッシュをクリアしてください。');
+                // configキャッシュの問題の可能性があるため、env()から直接取得
+                config(['jwt.secret' => $jwtSecretEnv]);
+                $jwtSecret = $jwtSecretEnv;
+            }
+            
+            if (empty($jwtSecret)) {
+                \Log::error('JWT_SECRETが設定されていません。環境変数を確認してください。', [
+                    'config_jwt_secret' => $jwtSecret ? '設定済み' : '未設定',
+                    'env_jwt_secret' => $jwtSecretEnv ? '設定済み' : '未設定'
+                ]);
             } else {
                 $jwtToken = JWTAuth::fromUser($user);
                 if ($jwtToken) {

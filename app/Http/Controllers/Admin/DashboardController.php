@@ -32,9 +32,25 @@ class DashboardController extends Controller
             // セッションにトークンがない場合、新しく生成を試みる
             if (!$token) {
                 try {
-                    // JWT_SECRETが設定されているか確認
-                    if (empty(config('jwt.secret'))) {
-                        throw new \Exception('JWT_SECRETが設定されていません。環境変数を確認してください。');
+                    // JWT_SECRETが設定されているか確認（複数の方法でチェック）
+                    $jwtSecret = config('jwt.secret');
+                    $jwtSecretEnv = env('JWT_SECRET');
+                    
+                    \Log::debug('JWT_SECRET確認', [
+                        'config_jwt_secret' => $jwtSecret ? '設定済み（長さ: ' . strlen($jwtSecret) . '）' : '未設定',
+                        'env_jwt_secret' => $jwtSecretEnv ? '設定済み（長さ: ' . strlen($jwtSecretEnv) . '）' : '未設定',
+                        'all_env_vars' => array_keys($_ENV ?? [])
+                    ]);
+                    
+                    if (empty($jwtSecret) && empty($jwtSecretEnv)) {
+                        throw new \Exception('JWT_SECRETが設定されていません。環境変数を確認してください。config: ' . ($jwtSecret ? 'OK' : 'NG') . ', env: ' . ($jwtSecretEnv ? 'OK' : 'NG'));
+                    }
+                    
+                    // env()から直接取得した値を使用
+                    if (empty($jwtSecret) && !empty($jwtSecretEnv)) {
+                        \Log::warning('config()からJWT_SECRETが取得できませんが、env()から取得できました。configキャッシュをクリアしてください。');
+                        // configキャッシュの問題の可能性があるため、env()から直接取得
+                        config(['jwt.secret' => $jwtSecretEnv]);
                     }
                     
                     $token = JWTAuth::fromUser($user);
