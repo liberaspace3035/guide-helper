@@ -228,28 +228,52 @@ class AuthController extends Controller
             // JWT_SECRETが設定されているか確認（複数の方法でチェック）
             $jwtSecret = config('jwt.secret');
             $jwtSecretEnv = env('JWT_SECRET');
+            $jwtSecretGetEnv = getenv('JWT_SECRET');
             
-            if (empty($jwtSecret) && !empty($jwtSecretEnv)) {
-                \Log::warning('config()からJWT_SECRETが取得できませんが、env()から取得できました。configキャッシュをクリアしてください。');
-                // configキャッシュの問題の可能性があるため、env()から直接取得
-                config(['jwt.secret' => $jwtSecretEnv]);
-                $jwtSecret = $jwtSecretEnv;
-            }
+            \Log::debug('JWT_SECRET確認（ログイン時）', [
+                'config_jwt_secret' => $jwtSecret ? '設定済み（長さ: ' . strlen($jwtSecret) . '）' : '未設定',
+                'env_jwt_secret' => $jwtSecretEnv ? '設定済み（長さ: ' . strlen($jwtSecretEnv) . '）' : '未設定',
+                'getenv_jwt_secret' => $jwtSecretGetEnv ? '設定済み（長さ: ' . strlen($jwtSecretGetEnv) . '）' : '未設定',
+            ]);
             
-            if (empty($jwtSecret)) {
+            // 優先順位: env() > getenv() > config()
+            $finalJwtSecret = $jwtSecretEnv ?: ($jwtSecretGetEnv ?: $jwtSecret);
+            
+            if (empty($finalJwtSecret)) {
                 \Log::error('JWT_SECRETが設定されていません。環境変数を確認してください。', [
                     'config_jwt_secret' => $jwtSecret ? '設定済み' : '未設定',
-                    'env_jwt_secret' => $jwtSecretEnv ? '設定済み' : '未設定'
+                    'env_jwt_secret' => $jwtSecretEnv ? '設定済み' : '未設定',
+                    'getenv_jwt_secret' => $jwtSecretGetEnv ? '設定済み' : '未設定',
+                    'suggestion' => 'Railwayの環境変数でJWT_SECRETを設定してください'
                 ]);
             } else {
+                // config()が空の場合は、直接設定（JWTAuthは自動的にconfig()から読み込む）
+                if (empty($jwtSecret)) {
+                    config(['jwt.secret' => $finalJwtSecret]);
+                    \Log::info('JWT_SECRETをconfig()に設定しました');
+                }
+                
                 $jwtToken = JWTAuth::fromUser($user);
                 if ($jwtToken) {
-                    \Log::info('JWTトークンを生成しました', ['user_id' => $user->id]);
+                    \Log::info('JWTトークンを生成しました', [
+                        'user_id' => $user->id,
+                        'token_length' => strlen($jwtToken)
+                    ]);
+                } else {
+                    \Log::error('JWTトークンの生成に失敗しました（nullが返されました）', ['user_id' => $user->id]);
                 }
             }
+        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+            \Log::error('ログイン時のJWTトークン生成エラー (JWTException): ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'exception_class' => get_class($e),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // トークン生成に失敗してもログインは続行
         } catch (\Exception $e) {
             \Log::error('ログイン時のJWTトークン生成エラー: ' . $e->getMessage(), [
                 'user_id' => $user->id,
+                'exception_class' => get_class($e),
                 'trace' => $e->getTraceAsString()
             ]);
             // トークン生成に失敗してもログインは続行
