@@ -240,11 +240,12 @@ class AuthController extends Controller
             $finalJwtSecret = $jwtSecretEnv ?: ($jwtSecretGetEnv ?: $jwtSecret);
             
             if (empty($finalJwtSecret)) {
-                \Log::error('JWT_SECRETが設定されていません。環境変数を確認してください。', [
+                \Log::error('JWT_SECRETが設定されていません（ログイン時）。環境変数を確認してください。', [
                     'config_jwt_secret' => $jwtSecret ? '設定済み' : '未設定',
                     'env_jwt_secret' => $jwtSecretEnv ? '設定済み' : '未設定',
                     'getenv_jwt_secret' => $jwtSecretGetEnv ? '設定済み' : '未設定',
-                    'suggestion' => 'Railwayの環境変数でJWT_SECRETを設定してください'
+                    'available_env_vars' => array_keys($_ENV ?? []),
+                    'suggestion' => 'RailwayダッシュボードでLaravelアプリケーションサービスの「Variables」タブからJWT_SECRETを設定してください'
                 ]);
             } else {
                 // config()が空の場合は、直接設定（JWTAuthは自動的にconfig()から読み込む）

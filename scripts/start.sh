@@ -38,6 +38,14 @@ mkdir -p storage/framework/sessions
 mkdir -p storage/framework/views
 chmod -R 775 bootstrap/cache storage
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checking environment variables..."
+if [ -z "$JWT_SECRET" ]; then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⚠️  WARNING: JWT_SECRET is not set!"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Please set JWT_SECRET in Railway environment variables."
+else
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ JWT_SECRET is set (length: ${#JWT_SECRET})"
+fi
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Clearing config cache..."
 php artisan config:clear || true
 

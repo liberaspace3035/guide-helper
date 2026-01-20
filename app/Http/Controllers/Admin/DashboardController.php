@@ -47,7 +47,21 @@ class DashboardController extends Controller
                     $finalJwtSecret = $jwtSecretEnv ?: ($jwtSecretGetEnv ?: $jwtSecret);
                     
                     if (empty($finalJwtSecret)) {
-                        throw new \Exception('JWT_SECRETが設定されていません。環境変数を確認してください。config: ' . ($jwtSecret ? 'OK' : 'NG') . ', env: ' . ($jwtSecretEnv ? 'OK' : 'NG') . ', getenv: ' . ($jwtSecretGetEnv ? 'OK' : 'NG'));
+                        // より詳細なエラーメッセージ
+                        $errorMsg = 'JWT_SECRETが設定されていません。環境変数を確認してください。' . PHP_EOL;
+                        $errorMsg .= 'config: ' . ($jwtSecret ? 'OK' : 'NG') . PHP_EOL;
+                        $errorMsg .= 'env: ' . ($jwtSecretEnv ? 'OK' : 'NG') . PHP_EOL;
+                        $errorMsg .= 'getenv: ' . ($jwtSecretGetEnv ? 'OK' : 'NG') . PHP_EOL;
+                        $errorMsg .= '解決方法: RailwayダッシュボードでLaravelアプリケーションサービスの「Variables」タブからJWT_SECRETを設定してください。';
+                        
+                        \Log::error('JWT_SECRET未設定エラー', [
+                            'config_jwt_secret' => $jwtSecret ? '設定済み' : '未設定',
+                            'env_jwt_secret' => $jwtSecretEnv ? '設定済み' : '未設定',
+                            'getenv_jwt_secret' => $jwtSecretGetEnv ? '設定済み' : '未設定',
+                            'available_env_vars' => array_keys($_ENV ?? [])
+                        ]);
+                        
+                        throw new \Exception($errorMsg);
                     }
                     
                     // config()が空の場合は、直接設定（JWTAuthは自動的にconfig()から読み込む）
