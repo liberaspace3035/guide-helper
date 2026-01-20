@@ -169,12 +169,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE', function() {
-        // HTTPS環境を自動検出（Railwayなどのプロキシ環境に対応）
-        return request()->isSecure() || 
-               request()->header('X-Forwarded-Proto') === 'https' ||
-               (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on');
-    }),
+    'secure' => env('SESSION_SECURE_COOKIE', null),
 
     /*
     |--------------------------------------------------------------------------

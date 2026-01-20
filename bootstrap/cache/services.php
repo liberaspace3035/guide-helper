@@ -32,7 +32,8 @@
     28 => 'Spatie\\LaravelIgnition\\IgnitionServiceProvider',
     29 => 'Tymon\\JWTAuth\\Providers\\LaravelServiceProvider',
     30 => 'Tymon\\JWTAuth\\Providers\\LaravelServiceProvider',
-    31 => 'App\\Providers\\RouteServiceProvider',
+    31 => 'App\\Providers\\AppServiceProvider',
+    32 => 'App\\Providers\\RouteServiceProvider',
   ),
   'eager' => 
   array (
@@ -53,7 +54,8 @@
     14 => 'Spatie\\LaravelIgnition\\IgnitionServiceProvider',
     15 => 'Tymon\\JWTAuth\\Providers\\LaravelServiceProvider',
     16 => 'Tymon\\JWTAuth\\Providers\\LaravelServiceProvider',
-    17 => 'App\\Providers\\RouteServiceProvider',
+    17 => 'App\\Providers\\AppServiceProvider',
+    18 => 'App\\Providers\\RouteServiceProvider',
   ),
   'deferred' => 
   array (
