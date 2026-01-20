@@ -31,8 +31,15 @@ try {
     sleep 2
 done
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Ensuring cache directories exist..."
+mkdir -p bootstrap/cache
+mkdir -p storage/framework/cache/data
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
+chmod -R 775 bootstrap/cache storage
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Clearing config cache..."
-php artisan config:clear
+php artisan config:clear || true
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running migrations..."
 php artisan migrate --force
@@ -41,7 +48,7 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] Seeding admin user..."
 php artisan db:seed --class=AdminUserSeeder --force
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Caching config..."
-php artisan config:cache
+php artisan config:cache || echo "[$(date '+%Y-%m-%d %H:%M:%S')] Warning: config:cache failed, continuing without cache..."
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Laravel server..."
 exec php artisan serve --host=0.0.0.0 --port=$PORT
