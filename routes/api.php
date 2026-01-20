@@ -17,7 +17,7 @@ use App\Http\Controllers\Api\ChatController;
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/auth/user', [AuthController::class, 'user']);
     Route::post('/auth/logout', [AuthController::class, 'apiLogout']);
     

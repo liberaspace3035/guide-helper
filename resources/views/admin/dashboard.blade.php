@@ -933,74 +933,25 @@ function adminDashboard() {
         userCurrentLimits: {}, // 現在の月の限度時間情報を保持
 
         async init() {
-            // トークン生成エラーがある場合、ユーザーに通知
-            @if(isset($jwt_token_error) && $jwt_token_error)
-                console.error('JWTトークン生成エラー:', '{{ $jwt_token_error }}');
-                alert('認証トークンの生成に失敗しました。\n\nエラー: {{ $jwt_token_error }}\n\n本番環境のJWT_SECRET設定を確認してください。\n\nページをリロードします。');
-                window.location.reload();
-                return;
-            @endif
-            
-            // サーバーから渡されたJWTトークンをlocalStorageに保存
-            @if(isset($jwt_token) && $jwt_token)
-                try {
-                    localStorage.setItem('token', '{{ $jwt_token }}');
-                    console.log('✅ JWTトークンをlocalStorageに保存しました');
-                } catch (e) {
-                    console.error('❌ localStorageへの保存に失敗しました:', e);
-                    alert('ブラウザのストレージへのアクセスに失敗しました。ブラウザの設定を確認してください。');
-                }
-            @else
-                console.warn('⚠️ サーバーからJWTトークンが渡されていません');
-            @endif
-            
             await this.fetchDashboardData();
         },
 
         async fetchDashboardData() {
             try {
-                let token = localStorage.getItem('token');
-                
-                // サーバーから渡されたトークンがまだ保存されていない場合、再度取得を試みる
-                @if(isset($jwt_token) && $jwt_token)
-                    if (!token) {
-                        token = '{{ $jwt_token }}';
-                        try {
-                            localStorage.setItem('token', token);
-                            console.log('✅ トークンをlocalStorageに再保存しました');
-                        } catch (e) {
-                            console.error('❌ localStorageへの再保存に失敗しました:', e);
-                        }
-                    }
-                @endif
-                
-                if (!token) {
-                    console.error('トークンが存在しません。ログインしてください。');
-                    
-                    // トークン生成エラーがある場合、その情報も表示
-                    @if(isset($jwt_token_error) && $jwt_token_error)
-                        alert('認証トークンが取得できませんでした。\n\nエラー: {{ $jwt_token_error }}\n\n本番環境のJWT_SECRET設定を確認してください。\n\nログインページにリダイレクトします。');
-                    @else
-                        alert('ログインが必要です。ログインページにリダイレクトします。');
-                    @endif
-                    
-                    window.location.href = '/login';
-                    return;
-                }
-
                 const headers = {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 };
 
                 // 各リクエストでエラーハンドリングを追加
                 const fetchWithErrorHandling = async (url, options) => {
-                    const response = await fetch(url, options);
+                    const response = await fetch(url, {
+                        ...options,
+                        credentials: 'same-origin' // セッションクッキーを送信
+                    });
                     if (response.status === 401) {
                         console.error('認証エラー:', url);
-                        // トークンが無効な場合、ログインページにリダイレクト
-                        localStorage.removeItem('token');
                         alert('セッションが期限切れです。再度ログインしてください。');
                         window.location.href = '/login';
                         throw new Error('認証エラー');
@@ -1091,13 +1042,13 @@ function adminDashboard() {
 
         async fetchUsers() {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/users', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 this.users = data.users || [];
@@ -1117,13 +1068,13 @@ function adminDashboard() {
 
         async fetchGuides() {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/guides', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 this.guides = data.guides || [];
@@ -1140,11 +1091,9 @@ function adminDashboard() {
 
         async toggleAutoMatching() {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/settings/auto-matching', {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1174,11 +1123,9 @@ function adminDashboard() {
             }
 
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/matchings/approve', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1206,11 +1153,9 @@ function adminDashboard() {
             }
 
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/matchings/reject', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1259,10 +1204,11 @@ function adminDashboard() {
                 const response = await fetch(`/api/admin/reports/${reportId}/approve`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
 
                 if (response.ok) {
@@ -1293,14 +1239,14 @@ function adminDashboard() {
         async approveUser(userId) {
             if (!confirm('このユーザーを承認しますか？')) return;
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/users/${userId}/approve`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
 
                 if (response.ok) {
@@ -1325,10 +1271,11 @@ function adminDashboard() {
                 const response = await fetch(`/api/admin/users/${userId}/reject`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
 
                 if (response.ok) {
@@ -1346,14 +1293,14 @@ function adminDashboard() {
         async approveGuide(guideId) {
             if (!confirm('このガイドを承認しますか？')) return;
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/guides/${guideId}/approve`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
 
                 if (response.ok) {
@@ -1373,14 +1320,14 @@ function adminDashboard() {
         async rejectGuide(guideId) {
             if (!confirm('このガイドを拒否しますか？')) return;
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/guides/${guideId}/reject`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
 
                 if (response.ok) {
@@ -1399,11 +1346,9 @@ function adminDashboard() {
 
         async saveUserMeta(userId) {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/users/${userId}/profile-extra`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1427,11 +1372,9 @@ function adminDashboard() {
 
         async saveGuideMeta(guideId) {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/guides/${guideId}/profile-extra`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1466,10 +1409,8 @@ function adminDashboard() {
 
         async fetchEmailTemplates() {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/email-templates', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json; charset=utf-8',
                         'Accept': 'application/json; charset=utf-8'
                     }
@@ -1493,13 +1434,13 @@ function adminDashboard() {
 
         async fetchEmailSettings() {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/admin/email-settings', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 this.emailSettings = data.settings || [];
@@ -1515,10 +1456,11 @@ function adminDashboard() {
                 const url = `/api/admin/operation-logs${operationType ? '?operation_type=' + operationType : ''}`;
                 const response = await fetch(url, {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 this.operationLogs = data.logs || [];
@@ -1530,11 +1472,9 @@ function adminDashboard() {
 
         async updateEmailTemplate(templateId, subject, body, isActive) {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/email-templates/${templateId}`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1576,11 +1516,9 @@ function adminDashboard() {
             if (!setting) return;
 
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/email-settings/${settingId}`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1617,11 +1555,9 @@ function adminDashboard() {
             }
 
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/users/${userId}/monthly-limit`, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1648,13 +1584,13 @@ function adminDashboard() {
 
         async loadUserMonthlyLimits(userId) {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/admin/users/${userId}/monthly-limits`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 this.userMonthlyLimits[userId] = data.limits || [];
@@ -1698,10 +1634,11 @@ function adminDashboard() {
                 
                 const response = await fetch(`/api/admin/users/${userId}/monthly-limits?year=${year}&month=${month}`, {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 
                 if (response.ok) {
@@ -1802,13 +1739,13 @@ function announcementManagement() {
 
         async fetchAnnouncements() {
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch('/api/announcements/admin/all', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 this.announcements = data.announcements || [];
@@ -1836,7 +1773,6 @@ function announcementManagement() {
                 const response = await fetch(url, {
                     method: method,
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
@@ -1875,14 +1811,14 @@ function announcementManagement() {
             }
 
             try {
-                const token = localStorage.getItem('token');
                 const response = await fetch(`/api/announcements/admin/${id}`, {
                     method: 'DELETE',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
                 });
 
                 if (response.ok) {
